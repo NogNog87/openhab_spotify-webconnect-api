@@ -233,28 +233,38 @@ class spotify(object):
             resp = ""
 
         return resp    
-
-    def play(self, context_uri = None):
+    
+    def play(self, context_uri = None, new_device = None):
         """
-        Resume player
+        Resume player device
         """
-        print "-- Calling Service: Play"
-
-        if (context_uri is None):
-            payload = {}
+        print "-- Calling Service: Play device"
+        if (new_device is None):
+            action_url = "play"
+            print action_url
+            if (context_uri is None):
+                payload = {}
+            else:
+                payload = json.dumps({ 'context_uri': context_uri })
         else:
-            payload = json.dumps({ 'context_uri': context_uri })
+            if (context_uri is None):
+                payload = json.dumps({ 'device_ids': [new_device] })
+                action_url = ""
+            else:
+                payload = json.dumps({ 'context_uri': context_uri })
+                action_url = "play?device_id=" + str(new_device)
         print payload
+        print action_url
 
         try:
-            resp = self.call("play","PUT", payload = payload)
+            resp = self.call(action_url,"PUT", payload = payload)
             if (self.debug): print resp
-            self.update()  
+            self.update()
         except:
             print " -> Play Failure: ", sys.exc_info()[0]
             resp = ""
 
-        return resp        
+        return resp    
 
     def previous(self):
         """
@@ -286,6 +296,29 @@ class spotify(object):
 
         return resp
 
+    def devices(self):
+        """
+        Get a current player devices.
+        """
+        print "-- Calling Service: get devices"
+        try:
+            resp = self.call("devices")
+            print resp
+            if (self.debug): print resp
+            if ('devices' in resp):
+
+                for i in resp['devices']:
+                    self.oh.sendCommand('spotify_device_name', getJSONValue(i, ['name']))
+                    self.oh.sendCommand('spotify_device_id', getJSONValue(i, ['id']))
+                print " -> Success"
+            else:
+                print " -> Device list error :("
+        except:
+            print " -> Failure: ", sys.exc_info()[0]
+            resp = ""
+
+        return resp
+    
     def updateConnectionDateTime(self):
         self.oh.sendCommand('spotify_lastConnectionDateTime',time.strftime("%Y-%m-%dT%H:%M:%S+0000",time.gmtime(time.time())))     
 
@@ -319,7 +352,17 @@ def main():
             c.previous()
         if(args[1] == "next"):
             c.next()
-
+        if(args[1] == "devices"):
+            c.devices()
+        if(args[1] == "play_device"):
+            if(len(args)>3):
+                a = ""
+                for x in range(3, len(args)):
+                    a = a + args[x] + " "
+                c.play(a.strip(), args[2])
+            else:
+                c.play(None, args[2])
+                              
     c.updateConnectionDateTime()
 
     t2 = time.time()
