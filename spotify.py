@@ -52,8 +52,7 @@ class spotify(object):
         """
 
         #   Send OAuth payload to get access_token
-        payload = { 'code':self.oh.getState('spotify_auth_code'), 'client_id':self.client_id, 'client_secret':self.client_secret, 'redirec
-t_uri':REDIRECT_URI, 'grant_type':'authorization_code' }
+        payload = { 'code':self.oh.getState('spotify_auth_code'), 'client_id':self.client_id, 'client_secret':self.client_secret, 'redirect_uri':REDIRECT_URI, 'grant_type':'authorization_code' }
 
         print "-- Calling Token Service for the first time"
 
@@ -87,8 +86,7 @@ t_uri':REDIRECT_URI, 'grant_type':'authorization_code' }
         """
 
         #   Send OAuth payload to get access_token
-        payload = { 'refresh_token':self.refresh_token, 'client_id':self.client_id, 'client_secret':self.client_secret, 'redirect_uri':RED
-IRECT_URI, 'grant_type':'refresh_token' }
+        payload = { 'refresh_token':self.refresh_token, 'client_id':self.client_id, 'client_secret':self.client_secret, 'redirect_uri':REDIRECT_URI, 'grant_type':'refresh_token' }
 
         print "-- Calling Token Refresh Service"
 
@@ -167,8 +165,7 @@ IRECT_URI, 'grant_type':'refresh_token' }
                 self.oh.sendCommand('spotify_current_duration', getJSONValue(resp, ['item', 'duration_ms']))
                 self.oh.sendCommand('spotify_current_progress', getJSONValue(resp, ['progress_ms']))
                 self.oh.sendCommand('spotify_current_progress', getJSONValue(resp, ['progress_ms']))
-                self.oh.sendCommand('spotify_current_playing', mapValues(getJSONValue(resp, ['is_playing']), { 'True': 'ON', 'False': 'OFF
-' }))
+                self.oh.sendCommand('spotify_current_playing', mapValues(getJSONValue(resp, ['is_playing']), { 'True': 'ON', 'False': 'OFF' }))
                 self.oh.sendCommand('spotify_current_device', getJSONValue(resp, ['device', 'name']))
                 self.oh.sendCommand('spotify_current_volume', getJSONValue(resp, ['device', 'volume_percent']))
                 self.oh.sendCommand('spotify_current_device_id', getJSONValue(resp, ['device', 'id']))
@@ -316,19 +313,20 @@ IRECT_URI, 'grant_type':'refresh_token' }
                 current_device_id = self.oh.getState('spotify_current_device_id')
                 if( len(device_pick) == len(current_device_id) or len(device_pick) == 40):
                     array_index=1
-                    print "id: " + device_pick
+                    print "id: ", device_pick
                 else:
                     if (device_pick.isdigit() and len(device_pick) < 3):
                         array_index=2
-                        print "index: " + device_pick
+                        print "index: ", device_pick
                     else:
-                        print "name: " + device_pick
+                        print "name: ", device_pick
                         array_index=0
 
         except:
             print " -> Failure: ", sys.exc_info()[0]
 
         return array_index
+
 
 
     def devices(self, name = None, idNum = None, devIndex = None):
@@ -355,9 +353,14 @@ IRECT_URI, 'grant_type':'refresh_token' }
                 k = 1
                 while(exitStatus == ""):
                     idx = 1
+                    searchName = arrayDesc[(j%3)]
+                    print "Match :", searchName , " or ", arrayDesc[((1 + j)%3)], "index: ", iIndex
+                    intmed = str(searchName)
+                    print intmed
+                    print json.dumps(searchName)
                     for i in resp['devices']:
                         loopName = getJSONValue(i, ['name'])
-                        searchName = arrayDesc[(j%3)]
+
                         searchid = getJSONValue(i, ['id'])
                         print idx, "Device : " , loopName , "id :" ,searchid
                         if (arrayDesc[(j%3)] ==  loopName) or (arrayDesc[((1 + j)%3)] == searchid) or (iIndex == idx ):
@@ -419,16 +422,18 @@ IRECT_URI, 'grant_type':'refresh_token' }
             print " -> Failure: ", sys.exc_info()[0]
             resp = ""
         return selected_device
-
+    def removequotes(self,s): return "".join(i for i in s if i != "\"")
     def argsort(self, theargs = None):
         spotifyString="spotify:"
         myargs = ["",""]
 
         for i in range(2, len(theargs)):
+            print theargs[i]
+            stream=self.removequotes(theargs[i]).strip()
             if spotifyString in theargs[i].lower():
-                myargs[0] = myargs[0]  + theargs[i] + " "
+                myargs[0] = myargs[0]  + stream + " "
             else:
-                myargs[1] = myargs[1] + theargs[i] + " "
+                myargs[1] = myargs[1] + stream + " "
 
         return self.removeEmpty(myargs)
 
