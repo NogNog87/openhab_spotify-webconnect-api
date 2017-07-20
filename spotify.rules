@@ -1,15 +1,31 @@
 rule "Spotify run script"
 when
-		Item spotify_forceupadte received update
-	then		
-			val resp =  executeCommandLine("/usr/bin/python /etc/openhab2/scripts/spotify.py", 5000)
-			logInfo("Spotify", resp)
+                Item spotify_forceupadte received update
+        then
+                        val resp =  executeCommandLine("/usr/bin/python /etc/openhab2/scripts/spotify.py", 5000)
+                        logInfo("Spotify", resp)
 end
 
 rule "Spotify Action"
 when
-		Item spotify_action received update
-	then		
-			val resp =  executeCommandLine("/usr/bin/python /etc/openhab2/scripts/spotify.py " + spotify_action.state.toString, 5000)
-			logInfo("Spotify", resp)
+                Item spotify_action received update
+        then
+                        val resp =  executeCommandLine("/usr/bin/python /etc/openhab2/scripts/spotify.py " + spotify_action.state.toString, 5000)
+                        logInfo("Spotify", resp)
+end
+
+rule "Spotify play fixed"
+when
+                Item OpenhabPlay received update
+                or
+                Item PlayString received update
+        then
+                sendCommand(spotify_action, "play \"Jesse's 2nd echo\" spotify:album:1Mrv9cxsetXUfwNtQk0Dht")
+end
+
+rule "Spotify Action Variables"
+when
+        Item spotify_device_name changed
+        then
+                sendCommand(spotify_action, "play spotify:album:1Mrv9cxsetXUfwNtQk0Dht \"" + spotify_device_name.state.toString + "\"")
 end
