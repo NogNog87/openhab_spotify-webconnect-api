@@ -27,4 +27,10 @@ Number spotify_current_volume
 /* Switches for Player actions */
 String spotify_action
 
+/* Store device information */
+String spotify_devices
+String spotify_device_name 
+String spotify_device_id 
+String spotify_device_index
+
 DateTime spotify_lastConnectionDateTime 
