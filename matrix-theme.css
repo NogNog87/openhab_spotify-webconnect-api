@@ -72,6 +72,20 @@ body {
 	margin: 20px;
 }
 
+button.btn-primary {
+    
+    color: #26bf75;
+    border: 0; 
+    background: rgba(1,1,1,.1); 
+}
+
+.dropdown-menu {
+    
+    background: rgba(1,1,1,.7); 
+    font-size: 15px;
+    color: White;
+}
+
 .drawer {
     background: #000;
 }
@@ -79,7 +93,7 @@ body {
 	background: #000;
 }
 .drawer ul.menu li {
-    font-weight: 100;
+    font-weight: 300;
 }
 .drawer ul.menu li.active:not(.head):after {
 	display: none;
@@ -112,7 +126,6 @@ body {
 .container {
 	padding-top: 10px;
 }
-
 
 @media only screen {
     /* For mobile: */
@@ -159,6 +172,8 @@ body {
 @media only screen and (min-width: 1000px) {
     /* For desktop: */
     .section {
+        border-style: ridge;
+        border-color: #565f58;
     }
 	.section .widget {
 		width: 33%;
@@ -179,6 +194,32 @@ body {
 	} 
 }
 
+@keyframes example {
+    from {background-color: red;}
+    to {background-color: yellow;}
+}
+
+@keyframes bordersize {
+    0% { background-size: 3px 0%, 0% 3px,3px 0%, 0% 3px;
+ 
+        }
+    50% { background-size: 3px 100%, 100% 3px,3px 100%, 100% 3px; 
+
+            }
+    100% {  
+             background-size: 3px 0%, 0% 3px,3px 0%, 0% 3px;
+           
+
+        }
+}
+
+@keyframes object {
+    0%   {background-color:rgba(10,50,200,0.5); left:0%; top: -10px; }
+    25%  {background-color:rgba(10,50,200,0.5); left:100%;top: -10px; }
+    50%  {background-color:rgba(10,50,200,0.5); left:0%; top: -10px;}
+    75%  {background-color:rgba(10,50,200,0.5); left:100%; top: -10px;}
+    100% {background-color:rgba(10,50,200,0.5); left:0%;top: -10px;}
+}
 
 .section {
 	width: 100%;
@@ -190,7 +231,91 @@ body {
 	float: left;
 	text-align: left;
 	color: white;
+    border-style: solid;
+    border-color: #26bf75;
+    border-width: 1px;
+    border-radius: 5px;
+    
+    /*
+    display:inline-table;
+    vertical-align:middle;
+    margin:1em ;
+    padding:0.5em 1em;
+    background:
+    linear-gradient(
+      to right,
+      transparent 20%,
+      #26bf75 20%,
+      #26bf75 80%,
+      #26bf75 80%
+    ) bottom no-repeat,
+    linear-gradient(
+      to top,
+      #26bf75 0%,
+      #26bf75 300%
+    ) right 300% no-repeat,
+    linear-gradient(
+      to right,
+      #26bf75 0%,
+      #26bf75 100%
+    )   9000% 0 no-repeat,
+    linear-gradient(
+      to top,
+      #26bf75 0%,
+      #26bf75 300%
+    ) left 9000% no-repeat
+    ;  
+    transition:background-size 2s ease-in;
+    */
+    padding:0.25em;
+    display:inline-block;
+    /*border:none;*/
+    background-color:;
+    background:
+        linear-gradient(to bottom,rgba(10,50,200,0.5),#26bf75)  0 100%,
+        linear-gradient(to bottom,#26bf75,rgba(10,50,200,0.5)) 100% bottom,
+        linear-gradient(to right,#26bf75,rgba(10,50,200,0.5)) bottom right ,
+        linear-gradient(to right,#26bf75,rgba(10,50,200,0.5)) top    ;
+    background-size: 1px 100%, 100% 1px,1px 100%, 100% 1px;
+    background-repeat:no-repeat,no-repeat,no-repeat,no-repeat;
+    /*transition:1s;*/
+    animation-name: bordersize;
+    animation-duration: 4s;
+    animation-iteration-count: infinite;
 }
+.section:hover {
+  background-size: 3px 100%, 100% 3px,3px 100%, 100% 3px;   
+}
+
+.section .thing {
+    width: 50px;
+    height: 10px;
+    
+    position: relative;
+    animation-name: object;
+    animation-duration: 4s;
+    animation-iteration-count: infinite;
+    
+}
+
+/*
+.section, section ~ section:hover {
+  background-size: 
+    0% 3px, 
+    3px 0, 
+    3px 3px, 
+    3px 0;
+
+}
+.section:hover, section ~ section {
+  background-size: 
+    100% 3px , 
+    3px 100%, 
+    100% 3px, 
+    3px 100%;
+  transition:background-size 2s ease-in-out;
+}*/
+
 .section a {
   color: #ff2c0a;
 }
@@ -234,7 +359,9 @@ body {
 	right: 0px;
 }
 .section .sectionIcon svg {
+    stroke: #565f58;
     fill: #565f58;
+    stroke-width: 1px;
 }
 .section .bigDash {
 	float:left;
@@ -304,17 +431,24 @@ body {
 	margin-right: 10px;
 	float: left;
 }
+.section .icon svg, .section .control svg {
+  stroke-width: 2px;
+}
 .section .icon.off svg {
-	fill: #565f58;
+  stroke: #565f58;
+  fill: #565f58;
 }
 .section .icon.on svg {
+  stroke: #26bf75;
   fill: #26bf75;
 }
 .section .icon.warn svg {
+  stroke: #ff2c0a;
   fill: #ff2c0a;
   animation: blinker 1s linear infinite;
 }
 .section .icon.blink svg {
+  stroke: #00afb8;
   fill: #00afb8;
 	animation: blinker 1s linear infinite;
 }
@@ -322,9 +456,11 @@ body {
 	50% { opacity: 0; }
 }	
 .section .icon.wind svg {
+  stroke: #565f58;  
   fill: #565f58;  
 }
 .section .icon.on.wind svg {
+  stroke: #26bf75;  
   fill: #26bf75;  
 }
 .section .icon.wind {
@@ -347,6 +483,7 @@ body {
   opacity: 0.2;
 }
 .section .widget.disabled:active .icon svg {
+  stroke: #565f58;
   fill: #565f58;
 }
 .section .widget.disabled:active .name {
@@ -357,11 +494,13 @@ body {
 }
 
 .section .widget:active .icon svg {
+  stroke: #fff;
   fill: #fff;
 	-webkit-transition: 0.2s;
 }
 .section .widget:active .name {
   color:  #565f58;
+  fill:  #565f58;
 	-webkit-transition: 0.2s;
 }
 
@@ -438,6 +577,7 @@ body {
 .section .widget .valueGroup .value:nth-child(2) {
 	color: #1d4d3b;	
 }
+
 .section .controls {
 	margin-bottom: 10px;
 	overflow: hidden;
@@ -467,6 +607,7 @@ body {
 	-webkit-transition: 0.2s;
 }
 .section .control svg {
+  stroke: #26bf75;
   fill: #26bf75;
 	padding: 8px;
 }
@@ -474,6 +615,9 @@ body {
 
 .section .bigDash .value {
 	font-weight: 100;
+}
+.section .bigDash .top .icon svg{
+  stroke-width: 1px;
 }
 
 .section .bigDash .main {
