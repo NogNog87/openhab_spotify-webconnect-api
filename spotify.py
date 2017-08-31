@@ -16,10 +16,10 @@ from myopenhab import getJSONValue
 ACCOUNT_URL = 'https://accounts.spotify.com/api/token'
 API_ROOT_URL = 'https://api.spotify.com/v1/me/player/'
 REDIRECT_URI = 'http://openhabianpi.local:8080/static/spotify-auth.html'
-
+RAW_ROOT_URL = 'https://api.spotify.com/v1/me/'
 class spotify(object):
     """
-
+    
     A wrapper for the Spotify Web Connect API
 
     https://developer.spotify.com/web-api/web-api-connect-endpoint-reference/
@@ -27,7 +27,7 @@ class spotify(object):
     """
     def __init__(self):
 
-        self.debug = False
+        self.debug = False 
         self.oh = openhab()
 
         self.client_id = self.oh.getState('spotify_client_id')
@@ -45,7 +45,7 @@ class spotify(object):
         else:
             if (time.time() > float(self.token_expiry)):
                 self.refreshCredentials()
-
+      
     def generateCredentials(self):
         """
         Generate auth and refresh token for the very first time.
@@ -53,7 +53,7 @@ class spotify(object):
 
         #   Send OAuth payload to get access_token
         payload = { 'code':self.oh.getState('spotify_auth_code'), 'client_id':self.client_id, 'client_secret':self.client_secret, 'redirect_uri':REDIRECT_URI, 'grant_type':'authorization_code' }
-
+        
         print "-- Calling Token Service for the first time"
 
         try:
@@ -87,7 +87,7 @@ class spotify(object):
 
         #   Send OAuth payload to get access_token
         payload = { 'refresh_token':self.refresh_token, 'client_id':self.client_id, 'client_secret':self.client_secret, 'redirect_uri':REDIRECT_URI, 'grant_type':'refresh_token' }
-
+        
         print "-- Calling Token Refresh Service"
 
         try:
@@ -100,7 +100,7 @@ class spotify(object):
             if(r.status_code == 200):
                 access_token = resp['access_token']
                 expires_in = resp['expires_in']
-                if('refresh_token' in resp):
+                if('refresh_token' in resp): 
                     refresh_token = resp['refresh_token']
                     self.refresh_token = refresh_token
 
@@ -129,23 +129,28 @@ class spotify(object):
         """
         Call the API at the given path.
         """
-
+        print path 
+        if path == "playlists" :
+            print "playlists"
+        else:  
+            path  = "player/" + path 
+        print RAW_ROOT_URL + path
         if (time.time() > self.token_expiry):
             self.refreshCredentials()
         headers = {"Authorization": "Bearer " + self.access_token, "Content-Type": "application/json" }
         if mode == "POST":
-            r = requests.post(API_ROOT_URL + path,  headers=headers, data=payload)
+            r = requests.post(RAW_ROOT_URL + path,  headers=headers, data=payload)
             if(r.status_code != 202):
                 print r.content
             return r.status_code
         elif mode == "PUT":
-            r = requests.put(API_ROOT_URL + path,  headers=headers, data=payload)
+            r = requests.put(RAW_ROOT_URL + path,  headers=headers, data=payload)
             if(r.status_code != 202):
                 print r.content
             return r.status_code
         else:
-            r = requests.get(API_ROOT_URL + path,  headers=headers)
-            if(r.status_code != 202):
+            r = requests.get(RAW_ROOT_URL + path,  headers=headers)
+            if(r.status_code != 202 and r.status_code != 200 and r.status_code != 201 ):
                 print r.content
             return r.json()
 
@@ -179,45 +184,42 @@ class spotify(object):
 
         return resp
 
-    def volumeUp(self):
+    def volumeAdjust(self, adjustment = None):
         """
-        Volume up by 10%
+        Volume adjust by adjustment
         """
         print "-- Calling Service: Volume Up"
         try:
             vol = int(self.oh.getState('spotify_current_volume'))
-            vol = int(round(vol/10)*10 + 10)
-            if(vol>100):
+            vol = int(round(vol/10)*10 + adjustment)
+            if(vol>100): 
                 vol = 100
-            print " -> Volume To:" + str(vol)
-            resp = self.call("volume?volume_percent=" + str(vol),"PUT" )
-            self.oh.sendCommand('spotify_current_volume',vol)
+            resp = self.volume(vol)
+            
             if (self.debug): print resp
         except:
             print " -> VolumeUp Failure: ", sys.exc_info()[0]
             resp = ""
 
         return resp
-
-    def volumeDown(self):
+   
+    def volume(self, newVol = None):
         """
-        Volume down by 10%
+        Volume to newVol
         """
-        print "-- Calling Service: Volume Down"
+        print "-- Calling Service: Volume set"
         try:
-            vol = int(self.oh.getState('spotify_current_volume'))
-            vol = int(round(vol/10)*10 - 10)
-            if(vol<0):
-                vol = 0
-            print "Volume To:" + str(vol)
-            resp = self.call("volume?volume_percent=" + str(vol),"PUT" )
-            self.oh.sendCommand('spotify_current_volume',vol)
+            print "Volume To:" + str(newVol)
+            resp = self.call("volume?volume_percent=" + str(newVol),"PUT" )
+            self.oh.sendCommand('spotify_current_volume',newVol)
             if (self.debug): print resp
         except:
             print " -> VolumeDown Failure: ", sys.exc_info()[0]
             resp = ""
 
-        return resp
+        return resp    
+    
+    
 
     def pause(self):
         """
@@ -232,15 +234,17 @@ class spotify(object):
             print " -> Pause Failure: ", sys.exc_info()[0]
             resp = ""
 
-        return resp
-
+        return resp    
+    
     def play(self, context_uri = None, new_device = None):
         """
         Resume player device
         """
         print "-- Calling Service: Play device"
-        if (new_device is None):
+         
+        if (new_device is None or len(new_device)==0):
             action_url = "play"
+            print "basic url match"
             print action_url
             if (context_uri is None):
                 payload = {}
@@ -264,7 +268,7 @@ class spotify(object):
             print " -> Play Failure: ", sys.exc_info()[0]
             resp = ""
 
-        return resp
+        return resp    
 
     def previous(self):
         """
@@ -274,12 +278,12 @@ class spotify(object):
         try:
             resp = self.call("previous","POST")
             if (self.debug): print resp
-            self.update()
+            self.update()  
         except:
             print " -> Previous Failure: ", sys.exc_info()[0]
             resp = ""
 
-        return resp
+        return resp        
 
     def next(self):
         """
@@ -307,27 +311,43 @@ class spotify(object):
         index_test=""
         array_index=-1
 #Dynamic check of id length against current id, with backup test if current id is null.
-
+      
         try:
             if(device_pick):
                 current_device_id = self.oh.getState('spotify_current_device_id')
                 if( len(device_pick) == len(current_device_id) or len(device_pick) == 40):
                     array_index=1
-                    print "id: ", device_pick
+                    print "id: ", device_pick        
                 else:
                     if (device_pick.isdigit() and len(device_pick) < 3):
                         array_index=2
-                        print "index: ", device_pick
+                        print "index: ", device_pick  
                     else:
                         print "name: ", device_pick
-                        array_index=0
+                        array_index=0           
 
         except:
-            print " -> Failure: ", sys.exc_info()[0]
+            print " -> Failure: ", sys.exc_info()[0]          
 
         return array_index
 
+    def playlists(self):
+        """
+        Get users recent playlists
+        """
+        print "-- Calling Service: get playlists"
 
+        try:
+            
+            resp = self.call("playlists")
+            if (self.debug): print resp
+            self.oh.sendCommand('spotify_playlists', json.dumps(resp))
+
+        except:
+            print " -> Failure: ", sys.exc_info()[0]
+            resp = ""
+        
+        return resp            
 
     def devices(self, name = None, idNum = None, devIndex = None):
         """
@@ -336,17 +356,17 @@ class spotify(object):
         print "-- Calling Service: get devices"
         exitStatus=" -> Success"
         selected_device=""
-
+        
         if (name) or (idNum) or (devIndex): exitStatus = ""
         if (devIndex) : iIndex = int(devIndex)
         else: iIndex = -1
-        arrayDesc=[name,idNum,iIndex]
+        arrayDesc=[name,idNum,iIndex]    
         try:
             resp = self.call("devices")
             if (self.debug): print resp
             if ('devices' in resp):
                 self.oh.sendCommand('spotify_devices', json.dumps(resp))
-
+   
                 initOrder = 0
                 partial = ""
                 j = 0
@@ -356,13 +376,13 @@ class spotify(object):
                     searchName = arrayDesc[(j%3)]
                     print "Match :", searchName , " or ", arrayDesc[((1 + j)%3)], "index: ", iIndex
                     intmed = str(searchName)
-                    print intmed
+                    print intmed                   
                     print json.dumps(searchName)
                     for i in resp['devices']:
                         loopName = getJSONValue(i, ['name'])
-
+                        
                         searchid = getJSONValue(i, ['id'])
-                        print idx, "Device : " , loopName , "id :" ,searchid
+                        print idx, "Device : " , loopName , "id :" ,searchid 
                         if (arrayDesc[(j%3)] ==  loopName) or (arrayDesc[((1 + j)%3)] == searchid) or (iIndex == idx ):
                             self.oh.sendCommand('spotify_device_name', loopName)
                             self.oh.sendCommand('spotify_device_id', searchid)
@@ -371,44 +391,44 @@ class spotify(object):
                             selected_device = searchid
                             return selected_device
                         #Performs partial match serach if no results found
-                        if (searchName):
+                        if (searchName): 
                             if searchName.lower() in loopName.lower():
-                                partial =  searchid
+                                partial =  searchid                              
                         idx = idx + 1
-                    #Looks at the various inputs and seraches on each input in various fields
+                    #Looks at the various inputs and seraches on each input in various fields                    
                     iIndex=""
                     j+=1
-                    if( j > 3): exitStatus="FAILED"
+                    if( j > 3): exitStatus="FAILED"   
                     if (j == k):
                         k = 2
                         dev_desp=""
-                        if (idNum):
+                        if (idNum): 
                             dev_desp = idNum
                             idNum=""
                             j  = 0
                             initOrder = 1
-                            print "idNum serach"
-                        elif (devIndex) :
+                            print "idNum serach" 
+                        elif (devIndex) : 
                             dev_desp = devIndex
                             devIndex=""
                             j  = 0
                             iIndex=-1
                             initOrder = 2
-                            print "devinx serach"
+                            print "devinx serach" 
                         elif (name) :
                             dev_desp = name
                             j  = 0
                             name = ""
                             initOrder = 0
-                            print "name serach"
+                            print "name serach"                         
                         if (dev_desp):
                             smart_index = self.device_match(dev_desp)
                             if(smart_index > 0):
                                 arrayDesc[smart_index] = dev_desp
-                                if (smart_index == 2):
+                                if (smart_index == 2): 
                                     iIndex = int(dev_desp)
                                 if (smart_index == initOrder): j = j + 1
-
+                                
                         elif (partial):
                             k = 10
                             j = 3
@@ -429,24 +449,35 @@ class spotify(object):
 
         for i in range(2, len(theargs)):
             print theargs[i]
-            stream=self.removequotes(theargs[i]).strip()
+            stream=self.removequotes(theargs[i]).strip()            
             if spotifyString in theargs[i].lower():
                 myargs[0] = myargs[0]  + stream + " "
-            else:
+            else: 
                 myargs[1] = myargs[1] + stream + " "
-
+        
         return self.removeEmpty(myargs)
-
+    
+  
     def removeEmpty(self, inString = None):
-        print inString
-        for i in range(len(inString)):
+        print inString        
+        for i in range(len(inString)):        
             if(inString[i] == ""):  inString[i] = None
-            else: inString[i]=inString[i].strip()
+            else: inString[i]=inString[i].strip()    
         return inString
 
+    def sanitiseActions(self, uristring = None, device_string = None):
+        new_device_id = self.devices(device_string)
+        current_device = self.oh.getState('spotify_current_device_id')
+        currently_playing = self.oh.getState('spotify_current_playing')
+        ma=[uristring,device_string]
+        if (current_device == new_device_id):
+            ma[1]=""
+        
+        return ma
 
+    
     def updateConnectionDateTime(self):
-        self.oh.sendCommand('spotify_lastConnectionDateTime',time.strftime("%Y-%m-%dT%H:%M:%S+0000",time.gmtime(time.time())))
+        self.oh.sendCommand('spotify_lastConnectionDateTime',time.strftime("%Y-%m-%dT%H:%M:%S+0000",time.gmtime(time.time())))     
 
 def main():
 
@@ -455,21 +486,27 @@ def main():
     c = spotify()
 
     args = sys.argv
-
+    
     if(len(args) == 1):
         c.update()
     else:
 
         if(args[1] == "volume_up"):
-            c.volumeUp()
+            c.volumeAdjust(10)
         if(args[1] == "volume_down"):
-            c.volumeDown()
+            c.volumeAdjust(-10)
+        if(args[1] == "volume"):
+            c.volume(args[2])
+        if(args[1] == "mute"):
+            c.volume("0")              
         if(args[1] == "play"):
             if(len(args)>2):
-                ma = c.argsort(args)
-                c.play(ma[0],c.devices(ma[1]))
+                ma = c.argsort(args)                                
+                c.play(ma[0],c.devices(ma[1]))                
             else:
                 c.play()
+        if(args[1] == "playlists"):
+            c.playlists()
         if(args[1] == "pause"):
             c.pause()
         if(args[1] == "previous"):
@@ -478,9 +515,9 @@ def main():
             c.next()
         if(args[1] == "devices"):
             if(len(args)>2):
-                ma = c.argsort(args)
+                ma = c.argsort(args)  
                 c.devices(ma[1])
-            else:
+            else:               
                 c.devices()
         if(args[1] == "device_id"):
             if(len(args)>2):
@@ -489,23 +526,23 @@ def main():
                 c.devices()
         if(args[1] == "device_name"):
             if(len(args)>2):
-                ma = c.argsort(args)
+                ma = c.argsort(args)  
                 c.devices(ma[1])
-            else:
+            else:            
                 c.devices()
         if(args[1] == "device_index"):
-            if(len(args)>2):
+            if(len(args)>2):            
                 c.devices(None, None, args[2])
-            else:
+            else:            
                 c.devices()
         if(args[1] == "play_device"):
-            ma = c.argsort(args)
+            ma = c.argsort(args)  
             c.play(ma[0], c.devices(ma[1]))
         if(args[1] == "play_device_name"):
-            ma = c.argsort(args)
+            ma = c.argsort(args)  
             c.play(ma[0], c.devices(ma[1]))
-
-
+                   
+                              
     c.updateConnectionDateTime()
 
     t2 = time.time()
