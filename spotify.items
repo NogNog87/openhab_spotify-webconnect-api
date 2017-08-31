@@ -1,36 +1,58 @@
-
+Group:Switch sgswitch
+Group:String sgstring
+Group sgdevices
 /* Switch to Force Update */
-Switch spotify_forceupadte
-
+Switch spotify_forceupadte (sgswitch)
+/*
+Client ID
+91a7177683c340c8bcf64abba6c1ed43
+Client Secret
+283b51700dbc4f81840649259270cf75
+*/
 /* Strings for Primary Auth */
-String spotify_auth_code
-String spotify_client_id
-String spotify_client_secret
+String spotify_auth_code (sgstring)
+String spotify_client_id (sgstring)
+String spotify_client_secret (sgstring)
 
 /* Strings for Token Auth */
-String spotify_access_token "AccessToken [%s]"
-String spotify_refresh_token "RefreshToken [%s]"
-String spotify_token_expiry "TokenExpiry [%s]"
+String spotify_auth "http://openhabianpi.local:8080/static/spotify-auth.html"
+String spotify_access_token "AccessToken [%s]" (sgstring)
+String spotify_refresh_token "RefreshToken [%s]" (sgstring)
+String spotify_token_expiry "TokenExpiry [%s]" (sgstring)
 DateTime spotify_token_issued "TokenIssued [%s]"
-
-/* Strings to store Player Data */
-String spotify_current_track
-String spotify_current_artist
-String spotify_current_cover
-String spotify_current_duration
-String spotify_current_progress
-Switch spotify_current_playing
-String spotify_current_device
-String spotify_current_device_id
-Number spotify_current_volume
-
-/* Switches for Player actions */
-String spotify_action
-
-/* Store device information */
+String spotify_devices_names (sgstring)
+String spotify_new_device (sgstring)
+String spotify_device_update (sgstring)
 String spotify_devices
-String spotify_device_name 
-String spotify_device_id 
-String spotify_device_index
 
+String spotify_device_name (sgstring)
+String spotify_device_id (sgstring)
+String spotify_device_index (sgstring)
+Number spotify_display_devices
+/* Strings to store Player Data */
+String spotify_summary "Spotify song is [%s]" (sgstring)
+String spotify_current_track (sgstring)
+String spotify_current_artist (sgstring)
+String spotify_current_cover (sgstring)
+String spotify_current_duration (sgstring)
+String spotify_current_progress (sgstring)
+Switch spotify_current_playing (sgswitch)
+String spotify_current_device (sgstring)
+String spotify_current_device_id (sgstring)
+Number spotify_current_volume "spotify Volume [%d]" [ "Lighting" ]
+String spotify_set_volume
+Number spotify_unmute_volume
+Number spotify_slider_volume
+String spotify_playlists
+/* Switches for Player actions */
+//
+String spotify_action "Spotify Action: [%s]" [ "Lighting" ]
+String spotify_proxy_action 
 DateTime spotify_lastConnectionDateTime 
+Switch spotify_proxy_update
+
+/* Use this to control echo volume at night */
+Number spotify_lock "Automated Actions are currently [%d]" [ "Lighting" ]
+
+/* use to unlock or reset renetrant lock */ 
+Switch resetLock 
