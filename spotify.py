@@ -251,6 +251,7 @@ class spotify(object):
             else:
                 payload = json.dumps({ 'context_uri': context_uri })
         else:
+            self.oh.sendCommand('spotify_current_device',self.oh.getState('spotify_device_name'))
             if (context_uri is None):
                 payload = json.dumps({ 'device_ids': [new_device] })
                 action_url = ""
@@ -263,7 +264,8 @@ class spotify(object):
         try:
             resp = self.call(action_url,"PUT", payload = payload)
             if (self.debug): print resp
-            self.update()
+			
+#            self.update() too slow and update with old details
         except:
             print " -> Play Failure: ", sys.exc_info()[0]
             resp = ""
@@ -516,7 +518,7 @@ def main():
         if(args[1] == "devices"):
             if(len(args)>2):
                 ma = c.argsort(args)  
-                c.devices(ma[1])
+                c.devices(ma[0])
             else:               
                 c.devices()
         if(args[1] == "device_id"):
