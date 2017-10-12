@@ -5,9 +5,9 @@ Group sgdevices
 Switch spotify_forceupadte (sgswitch)
 /*
 Client ID
-91a7177683c340c8bcf64abba6c1ed43
+
 Client Secret
-283b51700dbc4f81840649259270cf75
+
 */
 /* Strings for Primary Auth */
 String spotify_auth_code (sgstring)
