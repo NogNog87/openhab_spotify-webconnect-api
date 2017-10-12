@@ -1,8 +1,14 @@
 # openhab_spotify-webconnect-api
 A simple Python script to integrate Spotify's Web Connect API (https://developer.spotify.com/web-api/web-api-connect-endpoint-reference/) to OpenHab (openhab.org)
 
-I've just found the amazing work by pmpkk and added some features. He should be backporting all the good stuff so use his version
+I've just found the amazing work by pmpkk and added some features around devices, giving you full control and allowing you to easily use Alexa and Home devices to control spotify on different devices with IFFT setups. They should be backporting all the good stuff so use his version
 pmpkk/openhab_spotify-webconnect-api
+
+You can do stuff like 
+python spotify.py play spotify:album:4DEZVbAxlZPRXWCHUV5wF3 “Jem’s Echo”
+or 
+python spotify.py play Jem
+
 
 <h1>Prerequisite</h1>
 
