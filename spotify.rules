@@ -1,38 +1,24 @@
-
 import java.util.concurrent.locks.ReentrantLock
 
 var ReentrantLock lock  = new ReentrantLock()
 var String volumeCommand
 
 rule "Spotify run script"
-when
+    when
 		Item spotify_forceupadte received update
 	then		
-		    lock.lock()
-    try {
-			val resp =  executeCommandLine("/usr/bin/python /etc/openhab2/scripts/spotify.py", 5000)
-			logInfo("Spotify", resp)
-		
-	    } finally{
-        lock.unlock()
-    }
+        val resp =  executeCommandLine("/usr/bin/python /etc/openhab2/scripts/spotify.py", 5000)
+        logInfo("Spotify", resp)
 end
 
 rule "Spotify Action"
-when
+    when
 		Item spotify_action received update
 	then
-		logInfo("Spotify", "before lock [{}] ", spotify_action.state.toString)	
-	    lock.lock()
-    try {
-        // do stuff
- 	
-			logInfo("Spotify", "Execute action [{}] ", spotify_action.state.toString)	
-			val resp =  executeCommandLine("/usr/bin/python /etc/openhab2/scripts/spotify.py " + spotify_action.state.toString, 5000)
-			logInfo("Spotify", "Execute action [{}] for [{}] ", spotify_action.state.toString, resp)
-			   } finally{
-        lock.unlock()
-    }
+	
+        logInfo("Spotify", "Execute action [{}] ", spotify_action.state.toString)	
+        val resp =  executeCommandLine("/usr/bin/python /etc/openhab2/scripts/spotify.py " + spotify_action.state.toString, 5000)
+        logInfo("Spotify", "Execute action [{}] for [{}] ", spotify_action.state.toString, resp)
 end
 
 
@@ -51,123 +37,82 @@ rule "Spotify Alexa play"
 end
 
 rule "Spotify play fixed"
-when
+    when
 		Item OpenhabPlay received update
-	then
-	
-		    lock.lock()
-    try {
+    then
 		sendCommand(spotify_action, "play \"Jesse's 2nd echo\" spotify:album:1Mrv9cxsetXUfwNtQk0Dht")
-
-   } finally{
-        lock.unlock()
-    }
 end
 
 //Hey Google Spotify <command>, e.g. Hey google Spotify play
+
 rule "Spotify Automated Action"
-when
+    when
         Item PlayString received command
-        then
-        
-	    lock.lock()
-    try {
-        
-        	logInfo("Spotify", "send Playstring [{}]", PlayString.state)
-        	sendCommand(spotify_action, PlayString.state.toString)	
-        
-           } finally{
-        lock.unlock()
-    }
-        
+    then
+    
+        logInfo("Spotify", "send Playstring [{}]", PlayString.state)
+        sendCommand(spotify_action, PlayString.state.toString)	
+    
 end
 
 rule "spotify manual update"
 	when 						
 		Item spotify_proxy_update received update
 	then
-	logInfo("Spotify", "Chron prelock proxy")
-	lock.lock()
-    try {
+
 	logInfo("Spotify", "Manual update requested at [{}] previous update at [{}]", now, spotify_lastConnectionDateTime.state)
 	if (parse(spotify_lastConnectionDateTime.state.toString).plusSeconds(45).isBefore(now)) {
 		sendCommand(spotify_forceupadte, ON)
 		logInfo("Spotify", "Manual update completed")
 	}
 	
-	           } finally{
-        lock.unlock()
-    
-	}
 end
-
-/* I think this rule causes a feedback kind of loop Not even sure when its used*/
-/* 
-rule "spotify device update"
-	when 						
-		Item spotify_device_index changed
-	then
-	
-			    lock.lock()
-    try {
-		sendCommand(spotify_action, "devices " + spotify_device_index.state.toString )
-
-           } finally{
-        lock.unlock()
-    }
-end
-*/
 
 rule "spotify live update"
-when
-	Time cron "0/30 * * * * ?"
-then
-	logInfo("Spotify", "Chron prelock live")
-	if ( spotify_current_playing.state == ON && parse(spotify_lastConnectionDateTime.state.toString).plusSeconds(20).isBefore(now)){		
-		lock.lock()
-    	try {
-			sendCommand(spotify_forceupadte, ON)
-			logInfo("Spotify", "Chrom live update run")		
-	        } finally{lock.unlock() }
-	}
+    when
+        Time cron "0/30 * * * * ?"
+    then
+
+        if ( spotify_current_playing.state == ON && parse(spotify_lastConnectionDateTime.state.toString).plusSeconds(20).isBefore(now)){		
+            
+            
+                sendCommand(spotify_forceupadte, ON)
+                logInfo("Spotify", "Chrom live update run")		
+        }
 end
 	
 rule "spotify update"
-when
-	Time cron "* 0/30 * * * ?"
-then
-	logInfo("Spotify", "Chron prelock")
-	if (parse(spotify_lastConnectionDateTime.state.toString).plusSeconds(45).isBefore(now)){			
-		lock.lock()
-	    try {
-		sendCommand(spotify_forceupadte, ON)
-		logInfo("Spotify", "Chrom  update run")	
-	        } finally{lock.unlock() }
-	}
+    when
+        Time cron "* 0/30 * * * ?"
+    then
+        logInfo("Spotify", "Chron prelock")
+        if (parse(spotify_lastConnectionDateTime.state.toString).plusSeconds(45).isBefore(now)){			
+
+            sendCommand(spotify_forceupadte, ON)
+            logInfo("Spotify", "Chrom  update run")	
+        }
 end
 
 rule "spotify device update"
-when
-	Time cron "* 0/45 * * * ?"
-then
-logInfo("Spotify", " prelock update device")
-	if (parse(spotify_lastConnectionDateTime.state.toString).plusSeconds(45).isBefore(now)){			
-		lock.lock()
-	    try {
-			sendCommand(spotify_action, "devices")
-			logInfo("Spotify", "Chrom device  update run")
-	        } finally{lock.unlock() }
-	}
+    when
+        Time cron "* 0/45 * * * ?"
+        or
+        Item spotify_device_update received command
+    then
+        logInfo("Spotify", " prelock update device")
+
+        sendCommand(spotify_action, "devices")
+        logInfo("Spotify", "Chrom device  update run")
 end
 		
 
 
 rule "Spotify Set Volume"
-when
+    when
 		Item spotify_set_volume received command
 	then	
-	    lock.lock()
-    try {
+	    
+
     		logInfo("Spotify", "Set Volume {}", receivedCommand.toString)
         	if (spotify_device_id.state == "766955b926defdf6d4187ab0881c6ce6a7863013") {
         		logInfo("Spotify", "Set Volume on TV {}", receivedCommand.toString)	
@@ -223,9 +168,7 @@ when
         		}
         	}
         			 
-        } finally{
-        lock.unlock()
-    }
+     
 end
 
 
@@ -233,6 +176,5 @@ rule "rest Lock"
 	when 						
 		Item resetLock received command
 	then
-
 	lock.unlock()
 end
