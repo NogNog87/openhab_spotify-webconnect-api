@@ -13,12 +13,16 @@ end
 
 rule "Spotify Action"
     when
-		Item spotify_action received update
+		Item spotify_action received command
 	then
 	
         logInfo("Spotify", "Execute action [{}] ", spotify_action.state.toString)	
         val resp =  executeCommandLine("/usr/bin/python /etc/openhab2/scripts/spotify.py " + spotify_action.state.toString, 5000)
-        logInfo("Spotify", "Execute action [{}] for [{}] ", spotify_action.state.toString, resp)
+        //Recently updating in the script is too fastfor the webapi and old details overwrite any local updates.
+        //Should really use this to set a timer so you don't get multiple updates when pressing multiple buttons in sucession
+        Thread::sleep(500)
+        sendCommand(spotify_forceupadte,ON)
+        logInfo("Spotify", "Finalise Action [{}] for [{}] ", spotify_action.state.toString, resp)
 end
 
 
@@ -73,11 +77,9 @@ rule "spotify live update"
         Time cron "0/30 * * * * ?"
     then
 
-        if ( spotify_current_playing.state == ON && parse(spotify_lastConnectionDateTime.state.toString).plusSeconds(20).isBefore(now)){		
-            
-            
-                sendCommand(spotify_forceupadte, ON)
-                logInfo("Spotify", "Chrom live update run")		
+        if ( spotify_current_playing.state == ON && parse(spotify_lastConnectionDateTime.state.toString).plusSeconds(20).isBefore(now)){            
+            sendCommand(spotify_forceupadte, ON)
+            logInfo("Spotify", "Chrom live update run")		
         }
 end
 	
