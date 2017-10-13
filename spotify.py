@@ -157,6 +157,7 @@ class spotify(object):
     def update(self):
         """
         Get a current player state.
+        Dont run this straight after a change, you get back old results overwriting anything done locally
         """
         print "-- Calling Service: Update"
         try:
@@ -169,11 +170,11 @@ class spotify(object):
                 self.oh.sendCommand('spotify_current_cover', getJSONValue(resp, ['item', 'album', 'images', 1, 'url']))
                 self.oh.sendCommand('spotify_current_duration', getJSONValue(resp, ['item', 'duration_ms']))
                 self.oh.sendCommand('spotify_current_progress', getJSONValue(resp, ['progress_ms']))
-                self.oh.sendCommand('spotify_current_progress', getJSONValue(resp, ['progress_ms']))
                 self.oh.sendCommand('spotify_current_playing', mapValues(getJSONValue(resp, ['is_playing']), { 'True': 'ON', 'False': 'OFF' }))
                 self.oh.sendCommand('spotify_current_device', getJSONValue(resp, ['device', 'name']))
                 self.oh.sendCommand('spotify_current_volume', getJSONValue(resp, ['device', 'volume_percent']))
                 self.oh.sendCommand('spotify_current_device_id', getJSONValue(resp, ['device', 'id']))
+                self.oh.sendCommand('spotify_current_context_uri', getJSONValue(resp, ['context', 'uri']))
 
                 print " -> Success"
             else:
@@ -219,7 +220,7 @@ class spotify(object):
 
         return resp    
     
-    
+
 
     def pause(self):
         """
@@ -230,6 +231,7 @@ class spotify(object):
             resp = self.call("pause","PUT")
             self.oh.sendCommand('spotify_current_playing',"OFF")
             if (self.debug): print resp
+#            self.update()
         except:
             print " -> Pause Failure: ", sys.exc_info()[0]
             resp = ""
@@ -264,8 +266,14 @@ class spotify(object):
         try:
             resp = self.call(action_url,"PUT", payload = payload)
             if (self.debug): print resp
-			
-#            self.update() too slow and update with old details
+            
+#            self.update()
+            self.oh.sendCommand('spotify_current_playing','ON')
+            """
+            Since api is too slow need to manually set name of device.
+            """
+#            self.oh.sendCommand('spotify_current_device',self.oh.getState('spotify_device_name'))
+
         except:
             print " -> Play Failure: ", sys.exc_info()[0]
             resp = ""
@@ -280,7 +288,7 @@ class spotify(object):
         try:
             resp = self.call("previous","POST")
             if (self.debug): print resp
-            self.update()  
+#            self.update()  
         except:
             print " -> Previous Failure: ", sys.exc_info()[0]
             resp = ""
@@ -295,7 +303,7 @@ class spotify(object):
         try:
             resp = self.call("next","POST")
             if (self.debug): print resp
-            self.update()
+#            self.update()
         except:
             print " -> Next Failure: ", sys.exc_info()[0]
             resp = ""
@@ -543,7 +551,8 @@ def main():
         if(args[1] == "play_device_name"):
             ma = c.argsort(args)  
             c.play(ma[0], c.devices(ma[1]))
-                   
+            
+                
                               
     c.updateConnectionDateTime()
 
