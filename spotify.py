@@ -15,8 +15,9 @@ from myopenhab import getJSONValue
 #   API Gateway
 ACCOUNT_URL = 'https://accounts.spotify.com/api/token'
 API_ROOT_URL = 'https://api.spotify.com/v1/me/player/'
-REDIRECT_URI = 'http://openhabianpi.local:8080/static/spotify-auth.html'
+REDIRECT_URI = 'http://debra.local:8080/static/spotify-auth.html'
 RAW_ROOT_URL = 'https://api.spotify.com/v1/me/'
+BASE_URL = 'https://api.spotify.com/v1/'
 class spotify(object):
     """
     
@@ -38,6 +39,7 @@ class spotify(object):
         self.token_issued = self.oh.getState('spotify_token_issued')
         self.token_expiry = self.oh.getState('spotify_token_expiry')
 
+        
         if(self.token_expiry == "NULL"):
             self.refreshCredentials()
         if (self.access_token == "NULL"):
@@ -129,29 +131,36 @@ class spotify(object):
         """
         Call the API at the given path.
         """
-        print path 
-        if path == "playlists" :
-            print "playlists"
-        else:  
-            path  = "player/" + path 
-        print RAW_ROOT_URL + path
+        stem = RAW_ROOT_URL
+        print path
+        if payload == "full_path":
+            stem = ""
+            payload = None
+        else:
+            if "playlists" in path :
+                path = stem + path
+                print "playlists"
+            else:  
+                path  = stem + "player/" + path 
+        print path
         if (time.time() > self.token_expiry):
             self.refreshCredentials()
         headers = {"Authorization": "Bearer " + self.access_token, "Content-Type": "application/json" }
         if mode == "POST":
-            r = requests.post(RAW_ROOT_URL + path,  headers=headers, data=payload)
+            r = requests.post( path,  headers=headers, data=payload)
             if(r.status_code != 202):
                 print r.content
             return r.status_code
         elif mode == "PUT":
-            r = requests.put(RAW_ROOT_URL + path,  headers=headers, data=payload)
+            r = requests.put(path,  headers=headers, data=payload)
             if(r.status_code != 202):
                 print r.content
             return r.status_code
         else:
-            r = requests.get(RAW_ROOT_URL + path,  headers=headers)
-            if(r.status_code != 202 and r.status_code != 200 and r.status_code != 201 ):
+            r = requests.get(path,  headers=headers)
+            if(r.status_code != 202 and r.status_code != 200 and r.status_code != 201 and r.status_code != 400 ):
                 print r.content
+            
             return r.json()
 
     def update(self):
@@ -170,29 +179,48 @@ class spotify(object):
                 self.oh.sendCommand('spotify_current_cover', getJSONValue(resp, ['item', 'album', 'images', 1, 'url']))
                 self.oh.sendCommand('spotify_current_duration', getJSONValue(resp, ['item', 'duration_ms']))
                 self.oh.sendCommand('spotify_current_progress', getJSONValue(resp, ['progress_ms']))
+                self.oh.sendCommand('spotify_current_update_time',time.strftime("%Y-%m-%dT%H:%M:%S+0000",time.gmtime(time.time())))  
                 self.oh.sendCommand('spotify_current_playing', mapValues(getJSONValue(resp, ['is_playing']), { 'True': 'ON', 'False': 'OFF' }))
                 self.oh.sendCommand('spotify_current_device', getJSONValue(resp, ['device', 'name']))
                 self.oh.sendCommand('spotify_current_volume', getJSONValue(resp, ['device', 'volume_percent']))
                 self.oh.sendCommand('spotify_current_device_id', getJSONValue(resp, ['device', 'id']))
                 self.oh.sendCommand('spotify_current_context_uri', getJSONValue(resp, ['context', 'uri']))
-
+                self.oh.sendCommand('spotify_playing', getJSONValue(resp, ['context', 'type']))
+                
                 print " -> Success"
             else:
-                print " -> Item node missing from response :("
+                print " -> Playing local file no details available"
         except:
             print " -> Failure: ", sys.exc_info()[0]
             resp = ""
 
         return resp
-
+    
+    def newItem(self, newName = None, newState = None):
+        """
+        Creates a new openhab item 
+        """
+        print "-- Calling Service: Create new item"
+        try:
+            resp = self.oh.putItemt(newName, newState)
+            
+            if (self.debug): print resp
+        except:
+            print " -> new Item Failure: ", sys.exc_info()[0]
+            resp = ""
+        print resp 
+        return resp
+    
+    
+    
     def volumeAdjust(self, adjustment = None):
         """
         Volume adjust by adjustment
         """
-        print "-- Calling Service: Volume Up"
+        print "-- Calling Service: Volume Up/Down"
         try:
             vol = int(self.oh.getState('spotify_current_volume'))
-            vol = int(round(vol/10)*10 + adjustment)
+            vol = int(round(vol/4)*4 + adjustment)
             if(vol>100): 
                 vol = 100
             resp = self.volume(vol)
@@ -238,7 +266,7 @@ class spotify(object):
 
         return resp    
     
-    def play(self, context_uri = None, new_device = None):
+    def play(self, context_uri = None, new_device = None, track_position = None):
         """
         Resume player device
         """
@@ -251,14 +279,21 @@ class spotify(object):
             if (context_uri is None):
                 payload = {}
             else:
-                payload = json.dumps({ 'context_uri': context_uri })
+                if (track_position is None):
+                    payload = json.dumps({ 'context_uri': context_uri })
+                else:
+                    payload = json.dumps({ 'context_uri': context_uri, 'offset': { 'position': track_position } })
+                    
         else:
             self.oh.sendCommand('spotify_current_device',self.oh.getState('spotify_device_name'))
             if (context_uri is None):
                 payload = json.dumps({ 'device_ids': [new_device] })
                 action_url = ""
             else:
-                payload = json.dumps({ 'context_uri': context_uri })
+                if (track_position is None):
+                    payload = json.dumps({ 'context_uri': context_uri })
+                else:
+                    payload = json.dumps({ 'context_uri': context_uri, 'offset': { 'position': track_position } })
                 action_url = "play?device_id=" + str(new_device)
         print payload
         print action_url
@@ -310,6 +345,20 @@ class spotify(object):
 
         return resp
 
+    def seek(self, position_ms):
+        """
+        Seek to position 
+        """
+        print "-- Calling Service: Next"
+        try:
+            resp = self.call("seek?position_ms="+position_ms ,"PUT")
+            if (self.debug): print resp
+#            self.update()
+        except:
+            print " -> Next Failure: ", sys.exc_info()[0]
+            resp = ""
+
+        return resp
 
     def device_match(self, device_pick = None):
         """
@@ -325,7 +374,7 @@ class spotify(object):
         try:
             if(device_pick):
                 current_device_id = self.oh.getState('spotify_current_device_id')
-                if( len(device_pick) == len(current_device_id) or len(device_pick) == 40):
+                if( len(device_pick) == len(current_device_id) or len(device_pick) > 30):
                     array_index=1
                     print "id: ", device_pick        
                 else:
@@ -349,7 +398,8 @@ class spotify(object):
 
         try:
             
-            resp = self.call("playlists")
+            resp = self.call("playlists?limit=50")
+            
             if (self.debug): print resp
             self.oh.sendCommand('spotify_playlists', json.dumps(resp))
 
@@ -359,6 +409,94 @@ class spotify(object):
         
         return resp            
 
+    def getPlaylistTracks(self, playlist_uri = None):
+        """
+        Gets songs in playlist_uri User full uri spotify:user:unparagoned:playlist:7DeOdmcqWMIztZSXb4hyPx
+        """
+        i=0
+        count = 0 
+        limit=100
+        offset=0
+        total=101
+        playlists_storage=""
+        split_uri=playlist_uri.split(":")
+        
+        next = BASE_URL + "users/" + split_uri[2] + "/playlists/" + split_uri[4] + "?offset=0&limit=100"
+        summary = '{ "items": [ ' + json.dumps('{"position": "position", "artist": "artist", "album": "album", "song": "song", "uri": "uri"}')
+        self.oh.sendCommand('spotify_playlist_tracks_status', "Updating") 
+        print "-- Calling Service: Getting playlist songs"
+        try:
+            
+            while( next is not None ):
+                
+                print i
+                self.oh.sendCommand('spotify_playlist_tracks_status', i)    
+                resp = self.call(next,'' ,"full_path")
+
+                if 'tracks' in resp:
+                    jval = resp['tracks']
+                else:
+                    jval = resp
+
+                next = jval['next']
+                
+                out = json.dumps(jval['items'])
+            
+                
+                for track in jval['items']:
+                
+                    vtrack = track['track']
+                
+                    artists = vtrack['artists']
+          
+                    vartists = " "
+         
+                    for aitem in artists:
+                        
+                        vartists = aitem
+                        
+                    album = vtrack['album']
+                    
+         
+                    summary  = summary + ', ' + json.dumps('{ "position": "' + str(count) + '", "artist": "' + vartists["name"] + '", "album": "' + album["name"]+ '", "song": "' + vtrack["name"] + '" , "uri": "' + vtrack["uri"] + '" }')
+                    count = count + 1
+                i = i + 1    
+                playlists_storage = playlists_storage + out
+           
+                
+               
+            summary = summary + " ] } "  
+            
+            self.oh.sendCommand('spotify_playlist_tracks', summary)
+            self.oh.sendCommand('spotify_playlist_tracks_status', "Updated")             
+        except:
+            print " -> Playlist track Failure: ", sys.exc_info()[0]
+            resp = ""
+            self.oh.sendCommand('spotify_playlist_tracks_status', "Error")
+           
+        return resp  
+    
+        
+    def getDevices(self):
+        """
+        Get List of Devices
+        """
+        print "-- Calling Service: Get Devices"
+        try:
+            resp = self.call("devices")
+            resp = json.dumps(resp["devices"])
+#            self.oh.sendCommand('spotify_device_list',resp)
+            deviceID = self.oh.getState('spotify_current_device_id')
+            payload = json.dumps({ 'device_ids': [ deviceID ] })
+            print payload
+            print resp
+            resp = self.call("","PUT", payload = payload)
+        except:
+            print " -> Device List Failure: ", sys.exc_info()[0]
+            resp = ""
+           
+        return resp        
+        
     def devices(self, name = None, idNum = None, devIndex = None):
         """
         Get a current player devices and helper function to play device.
@@ -400,9 +538,11 @@ class spotify(object):
                             exitStatus="Match Sucess"
                             selected_device = searchid
                             return selected_device
-                        #Performs partial match serach if no results found
+                        # Performs partial match serach if no results found
                         if (searchName): 
-                            if searchName.lower() in loopName.lower():
+                            if(loopName.lower() in "cain cane kain"):
+                                loopName="cain cane kain"
+                            if (searchName.lower() in loopName.lower()):
                                 partial =  searchid                              
                         idx = idx + 1
                     #Looks at the various inputs and seraches on each input in various fields                    
@@ -455,12 +595,15 @@ class spotify(object):
     def removequotes(self,s): return "".join(i for i in s if i != "\"")
     def argsort(self, theargs = None):
         spotifyString="spotify:"
-        myargs = ["",""]
-
+        myargs = ["","",""]
+        
         for i in range(2, len(theargs)):
             print theargs[i]
             stream=self.removequotes(theargs[i]).strip()            
             if spotifyString in theargs[i].lower():
+                urisplit = theargs[i].split(":")
+                if(urisplit[len(urisplit)-1].isdigit()):
+                    myargs[2] = urisplit[len(urisplit)-1]
                 myargs[0] = myargs[0]  + stream + " "
             else: 
                 myargs[1] = myargs[1] + stream + " "
@@ -484,6 +627,9 @@ class spotify(object):
             ma[1]=""
         
         return ma
+    
+  
+    
 
     
     def updateConnectionDateTime(self):
@@ -502,17 +648,29 @@ def main():
     else:
 
         if(args[1] == "volume_up"):
-            c.volumeAdjust(10)
+            c.volumeAdjust(5)
         if(args[1] == "volume_down"):
-            c.volumeAdjust(-10)
+            c.volumeAdjust(-5)
         if(args[1] == "volume"):
-            c.volume(args[2])
+            if(args[2]=="up"):
+                c.volumeAdjust(5)
+            else:
+                if(args[2]=="down"):
+                    c.volumeAdjust(-5)
+                else:
+                    c.volume(args[2])
         if(args[1] == "mute"):
             c.volume("0")              
         if(args[1] == "play"):
             if(len(args)>2):
-                ma = c.argsort(args)                                
-                c.play(ma[0],c.devices(ma[1]))                
+                ma = c.argsort(args)
+                if(len(ma)>2):
+                    if(ma[1] is None):
+                        c.play(ma[0], None, ma[2])
+                    else:
+                        c.play(ma[0], c.devices(ma[1]), ma[2])
+                else:
+                    c.play(ma[0],c.devices(ma[1]))                
             else:
                 c.play()
         if(args[1] == "playlists"):
@@ -551,6 +709,19 @@ def main():
         if(args[1] == "play_device_name"):
             ma = c.argsort(args)  
             c.play(ma[0], c.devices(ma[1]))
+        if(args[1] == "test_devices"):
+            c.getDevices()
+        if(args[1] == "seek"):
+            c.seek(args[2])
+        if(args[1] == "playlist_tracks"):
+            c.getPlaylistTracks(args[2])
+        if(args[1] == "new_item"):
+            if(len(args)>3):
+                c.newItem(args[2],args[3])
+            else:
+                c.newItem(args[2])
+            
+            
             
                 
                               

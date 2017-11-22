@@ -9,7 +9,7 @@
 <script>
 
 	$( document ).ready(function() {
-
+        
 		function getParameterByName(name, url) {
 		    if (!url) url = window.location.href;
 		    name = name.replace(/[\[\]]/g, "\\$&");
@@ -18,14 +18,14 @@
 		    if (!results) return null;
 		    if (!results[2]) return '';
 		    return decodeURIComponent(results[2].replace(/\+/g, " "));
-		}		
+		}	
 
 		$.get( "/rest/items/spotify_client_id/state", function( data ) {
 
 			if (data.length>10) {
 	  			$( "#client_id" ).html( data );
 
-	  			url = 'https://accounts.spotify.com/authorize?response_type=code&redirect_uri=' + encodeURI(document.location.href) + '&client_id=' + data + '&scope=user-read-playback-state user-modify-playback-state';
+	  			url = 'https://accounts.spotify.com/authorize?response_type=code&redirect_uri=' + encodeURI(document.location.href) + '&client_id=' + data + '&scope=user-read-playback-state user-modify-playback-state playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private user-library-read user-library-modify user-read-private user-read-birthdate user-read-email user-follow-read user-follow-modify user-follow-modify user-top-read user-read-playback-state user-read-recently-played user-read-currently-playing';
 
 	  			$( "#link" ).attr('href',url);				
 			} else {
@@ -71,12 +71,13 @@
 	<div class="title">Spotify Integration</div>
 	<div class="controls">
 
+    
 		<div class="widget">
 			<div class="icon off"><svg viewBox="0 0 48 48"><use xlink:href="/static/matrix-theme/public-icons.svg#none"></use></svg></div>
 			<div class="name"></div>
 			<div class="appLogo"><svg viewBox="0 0 440 100"><use xlink:href="/static/matrix-theme/AppIcons.svg#spotify"></use></svg></div>        
 		</div>
-
+        
 		<div class="widget wide">
 			<div class="icon off"><svg viewBox="0 0 48 48"><use xlink:href="/static/matrix-theme/public-icons.svg#none"></use></svg></div>
 			<div class="name">Client ID</div>

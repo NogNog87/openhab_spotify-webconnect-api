@@ -1,28 +1,46 @@
 import java.util.concurrent.locks.ReentrantLock
+import org.joda.time.DateTime
 
+var Timer spotifyLockTimer = null
 var ReentrantLock lock  = new ReentrantLock()
 var String volumeCommand
+var timeOut = 5000
 
 rule "Spotify run script"
     when
 		Item spotify_forceupadte received update
 	then		
-        val resp =  executeCommandLine("/usr/bin/python /etc/openhab2/scripts/spotify.py", 5000)
+        val resp =  executeCommandLine("/usr/bin/python /etc/openhab2/scripts/js/spotify.py", 5000)
         logInfo("Spotify", resp)
 end
+
+
+rule "Spotify Action long"
+    when
+		Item spotify_action_long received command
+	then
+	
+        logInfo("Spotify", "Execute action [{}] long ", spotify_action_long.state.toString)
+        val resp =  executeCommandLine("/usr/bin/python /etc/openhab2/scripts/js/spotify.py " + receivedCommand.toString, 200000)
+        Thread::sleep(2000)
+        sendCommand(spotify_forceupadte,ON)
+
+end
+
+
 
 rule "Spotify Action"
     when
 		Item spotify_action received command
 	then
-	
-        logInfo("Spotify", "Execute action [{}] ", spotify_action.state.toString)	
-        val resp =  executeCommandLine("/usr/bin/python /etc/openhab2/scripts/spotify.py " + spotify_action.state.toString, 5000)
+	     
+        logInfo("Spotify", "Execute action [{}] ", receivedCommand.toString)
+        val resp =  executeCommandLine("/usr/bin/python /etc/openhab2/scripts/spotify.py " + receivedCommand.toString, 5000)
         //Recently updating in the script is too fastfor the webapi and old details overwrite any local updates.
         //Should really use this to set a timer so you don't get multiple updates when pressing multiple buttons in sucession
         Thread::sleep(500)
         sendCommand(spotify_forceupadte,ON)
-        logInfo("Spotify", "Finalise Action [{}] for [{}] ", spotify_action.state.toString, resp)
+
 end
 
 
@@ -47,6 +65,21 @@ rule "Spotify play fixed"
 		sendCommand(spotify_action, "play \"Jesse's 2nd echo\" spotify:album:1Mrv9cxsetXUfwNtQk0Dht")
 end
 
+rule "Spotify seek"
+    when
+		Item spotify_current_progress_estimated received command
+    then
+        var seekpos = Integer::parseInt(spotify_current_progress_estimated.state.toString) * 1000 
+        logInfo("Spotify", "Position to seek {}", seekpos)
+      
+		sendCommand(spotify_action, "seek " + seekpos.toString )
+        postUpdate(spotify_current_progress, seekpos.toString)
+        postUpdate(spotify_current_update_time, now.toString)
+end
+
+
+
+
 //Hey Google Spotify <command>, e.g. Hey google Spotify play
 
 rule "Spotify Automated Action"
@@ -56,7 +89,6 @@ rule "Spotify Automated Action"
     
         logInfo("Spotify", "send Playstring [{}]", PlayString.state)
         sendCommand(spotify_action, PlayString.state.toString)	
-    
 end
 
 rule "spotify manual update"
@@ -72,6 +104,39 @@ rule "spotify manual update"
 	
 end
 
+
+rule "spotify update progress"
+    when
+        Time cron "0/1 * * * * ?"
+    then
+        var cprog =  now.millis 
+
+        if ( spotify_current_playing.state == ON ){
+            cprog = cprog - (spotify_current_update_time.state as DateTimeType).calendar.timeInMillis
+            
+            if( spotify_current_progress.state != NULL ) {
+                cprog = cprog + Integer::parseInt(spotify_current_progress.state.toString) 
+            }
+
+            if( cprog > Integer::parseInt(spotify_current_duration.state.toString)){
+                logInfo("spotify", "new song cprog{} and duration {}", cprog, spotify_current_update_time.state)
+                cprog=1
+                spotify_current_progress.sendCommand("1")
+                logInfo("spotify", "new song cprog{} and duration {}", cprog, spotify_current_update_time.state)
+                postUpdate(spotify_current_update_time, now.toString)
+                logInfo("spotify", "new song cprog{} and duration {}", cprog, spotify_current_update_time.state)
+                sendCommand(spotify_forceupadte,ON)
+                logInfo("spotify", "new song cprog{} and duration {}", cprog, spotify_current_update_time.state)
+                    
+            }
+            else{
+            postUpdate(spotify_current_progress_estimated, cprog / 1000)   
+            }
+        }                       
+
+end
+
+
 rule "spotify live update"
     when
         Time cron "0/30 * * * * ?"
@@ -79,13 +144,15 @@ rule "spotify live update"
 
         if ( spotify_current_playing.state == ON && parse(spotify_lastConnectionDateTime.state.toString).plusSeconds(20).isBefore(now)){            
             sendCommand(spotify_forceupadte, ON)
-            logInfo("Spotify", "Chrom live update run")		
+            logInfo("Spotify", "Chrom live update run")	            
         }
 end
+
+
 	
 rule "spotify update"
     when
-        Time cron "* 0/30 * * * ?"
+        Time cron "0 0/30 * * * ?"
     then
         logInfo("Spotify", "Chron prelock")
         if (parse(spotify_lastConnectionDateTime.state.toString).plusSeconds(45).isBefore(now)){			
@@ -95,82 +162,141 @@ rule "spotify update"
         }
 end
 
+
+
 rule "spotify device update"
     when
-        Time cron "* 0/45 * * * ?"
+        Time cron "0 0/45 * * * ?"
         or
         Item spotify_device_update received command
     then
         logInfo("Spotify", " prelock update device")
-
-        sendCommand(spotify_action, "devices")
-        logInfo("Spotify", "Chrom device  update run")
+        if (parse(spotify_lastConnectionDateTime.state.toString).plusSeconds(5).isBefore(now)){			
+            sendCommand(spotify_action, "devices")
+            logInfo("Spotify", "Chrom device  update run")
+        }  
 end
-		
 
+//Lock when above 50
+rule "set device lock"
+    when 
+		Item spotify_current_device_id changed
+    then
 
-rule "Spotify Set Volume"
+        if(spotify_lock_default == null){
+            sendCommand(spotify_lock_default, 50)
+        }
+       
+        logInfo("spotify lock", "device {} and lock state {}", spotify_device_id, spotify_lock)
+        if(spotify_current_device_id.state == "bcbe2a73ba7ca7a9b33a39205bc1e645069fdb6c") {
+            if(spotify_lock.state<51){
+                sendCommand(spotify_lock, 100)
+            }
+     	    if (spotifyLockTimer != null) {
+			    spotifyLockTimer.cancel
+			    spotifyLockTimer = null
+			}
+			spotifyLockTimer = createTimer(now.plusMinutes(15)) [| 
+                logInfo( "spotify", " lock finished automation can change device now" )
+                sendCommand(spotify_lock, spotify_lock_default.state.toString)
+                spotifyLockTimer = null         
+            ]
+	   
+        }
+        else{
+            if (spotifyLockTimer != null) {
+                spotifyLockTimer.cancel
+                spotifyLockTimer = null
+            }
+            sendCommand(spotify_lock, spotify_lock_default.state.toString)
+        }
+ 
+        
+end
+
+rule "spotify lock default changed"
     when
+        Item spotify_lock_default received command
+    then
+        logInfo("Spotify", "lock now {}", spotify_lock)
+		sendCommand(spotify_lock, receivedCommand)
+end
+	
+rule "Spotify Set  Volume"
+    when
+		Item spotify_slider_volume received command
+		or
 		Item spotify_set_volume received command
 	then	
+		logInfo("Spotifytest", "Set Volume {} and class {}", receivedCommand.toString, receivedCommand.getClass())
+	
+	  	var vNumber
+      	var lNumber
+  		if (receivedCommand.toString.matches("((-|\\+)?[0-9]+(\\.[0-9]+)?)+")) {
+		  	var tmp=receivedCommand.toString 
+		  	vNumber= Integer::parseInt(tmp)
+			lNumber = vNumber 
+	    } else {
 	    
+	    }
+	
+		if (spotify_device_id.state == "766955b926defdf6d4187ab0881c6ce6a7863013") {
+			logInfo("Spotify", "Set Volume on TV {}", vNumber)	
+			if ( receivedCommand == "volume_up" || receivedCommand == "up") { 
+				sendCommand(HarmonyLG, "VolumeUp")
+			}
+			else if ( receivedCommand == "volume_down" || receivedCommand == "down") { 
+				sendCommand(HarmonyLG, "VolumeDown") 
+			}
+			else if ( receivedCommand == "mute" ||  receivedCommand == "0" ) {
+				sendCommand(HarmonyLG, "mute") 
+			}
+		    else {	
+		        logInfo("Spotify", "start numbers on TV {} {} and tv {}", vNumber, lNumber, LG_TV0_Volume.state )	
 
-    		logInfo("Spotify", "Set Volume {}", receivedCommand.toString)
-        	if (spotify_device_id.state == "766955b926defdf6d4187ab0881c6ce6a7863013") {
-        		logInfo("Spotify", "Set Volume on TV {}", receivedCommand.toString)	
-        		if ( receivedCommand == "volume_up" || receivedCommand == "up") { 
-        			sendCommand(HarmonyLG, "VolumeUp")
-        		}
-        		else if ( receivedCommand == "volume_down" || receivedCommand == "down") { 
-        			sendCommand(HarmonyLG, "VolumeDown") 
-        		}
-        		else if ( receivedCommand == "mute" ||  receivedCommand == "0" ) {
-        			sendCommand(HarmonyLG, "mute") 
-        		}
-        		else if ( (receivedCommand as Number).intValue > 50 )  {
-        			sendCommand(HarmonyLG, "VolumeUp") 
-        		}
-        		else {
-        			sendCommand(HarmonyLG, "VolumeDown") 
-        		}		
-        	}
-        	else {
-        		//Note going through all parts
-        		logInfo("Spotify", "Set spotify {}", receivedCommand)
-        		if(receivedCommand == "volume_up" || receivedCommand == "volume_down" ) {
-        			sendCommand(spotify_action, receivedCommand)
-        			logInfo("Spotify", "stoped here vol {}", receivedCommand)
-        		}
-        		else if(receivedCommand == "up" || receivedCommand == "down"){
-        			sendCommand(spotify_action, "\"volume_" + receivedCommand + "\"")
-        			logInfo("Spotify", "stoped here up{}", receivedCommand)
-        		}        
-        		else if( receivedCommand == "mute" ||  receivedCommand == "0" ) {
-        			logInfo("Spotify", "stoped here mute {}", receivedCommand)
-        			if ((spotify_current_volume.state as Number).intValue == 0) {
-        				if(spotify_unmute_volume.state == NULL ){sendCommand(spotify_unmute_volume, 30)}
-        				logInfo("Spotify", "Set unmute {}", spotify_unmute_volume.state)
-        				sendCommand(spotify_action, "volume \"" + spotify_unmute_volume.state.toString + "\"")        	
-        			logInfo("Spotify", "stoped here mut2{}", receivedCommand)
-        			}
-        			else {
-        				sendCommand(spotify_unmute_volume, (spotify_current_volume.state as Number).intValue)
-        				sendCommand(spotify_action, "mute")
-        			logInfo("Spotify", "stoped here mute3{}", receivedCommand)
-        			}
-        		}
-        		else if( (receivedCommand as Number).intValue < 100 && (receivedCommand as Number).intValue > 0 ) {
-        			logInfo("Spotify", "Set volume {} for {}", receivedCommand.toString, (receivedCommand as Number).intValue)	
-        			sendCommand(spotify_action, "volume \"" + receivedCommand.toString + "\"")
-        		}
-        		else {   
-        			logInfo("Spotify", "Fall Through {}", receivedCommand)	
-        		     			
-        			sendCommand(spotify_action, receivedCommand)
-        		}
-        	}
-        			 
-     
+                while((LG_TV0_Volume.state as DecimalType)* 100  < lNumber  ) {
+                    sendCommand(LG_TV0_VolumeUp, "ON") 
+                    Thread::sleep(200)
+	            }
+	            while((LG_TV0_Volume.state as DecimalType)* 100  > lNumber ) {
+                    sendCommand(LG_TV0_VolumeDown, "ON")
+                    Thread::sleep(200)
+	            }
+            }
+        }
+        else {
+            logInfo("Spotify", "Set spotify {}", receivedCommand)
+            if(receivedCommand == "volume_up" || receivedCommand == "volume_down" ) {
+                sendCommand(spotify_action, receivedCommand)  
+            }
+            else if(receivedCommand == "up" || receivedCommand == "down"){
+                sendCommand(spotify_action, "\"volume_" + receivedCommand + "\"")
+                logInfo("Spotify", "stoped here up{}", receivedCommand)
+            }        
+            else if( receivedCommand == "mute" ||  receivedCommand == "0" ) {
+               
+                if ((spotify_current_volume.state as Number).intValue == 0) {
+                    if(spotify_unmute_volume.state == NULL ){sendCommand(spotify_unmute_volume, 30)}
+                    logInfo("Spotify", "Set unmute {}", spotify_unmute_volume.state)
+                    sendCommand(spotify_action, "volume \"" + spotify_unmute_volume.state.toString + "\"")
+                    postUpdate('spotify_current_volume', spotify_unmute_volume.state.toString)
+                }
+                else {
+                    sendCommand(spotify_unmute_volume, vNumber)
+                    sendCommand(spotify_action, "mute")
+                }
+            }
+            else if(vNumber != NULL){
+   
+                sendCommand(spotify_action, "volume \"" + receivedCommand.toString + "\"")
+                postUpdate('spotify_current_volume', receivedCommand.toString)        
+            }
+            else {   
+                logInfo("Spotify", "Fall Through {}", receivedCommand)	
+                sendCommand(spotify_action, receivedCommand.toString)
+            }
+        
+        } 															
 end
 
 
@@ -178,5 +304,5 @@ rule "rest Lock"
 	when 						
 		Item resetLock received command
 	then
-	lock.unlock()
+        lock.unlock()
 end

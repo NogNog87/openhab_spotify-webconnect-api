@@ -10,7 +10,7 @@ String spotify_client_id (sgstring)
 String spotify_client_secret (sgstring)
 
 /* Strings for Token Auth */
-String spotify_auth "http://openhabianpi.local:8080/static/spotify-auth.html"
+String spotify_auth "http://debra.local:8080/static/spotify-auth.html"
 String spotify_access_token "AccessToken [%s]" (sgstring)
 String spotify_refresh_token "RefreshToken [%s]" (sgstring)
 String spotify_token_expiry "TokenExpiry [%s]" (sgstring)
@@ -40,15 +40,26 @@ String spotify_set_volume
 Number spotify_unmute_volume
 Number spotify_slider_volume
 String spotify_playlists
+String spotify_playlist_tracks
+String spotify_playlist_tracks_status
+DateTime spotify_current_update_time
+String spotify_current_progress_estimated (sgstring)
+String spotify_current_progress_formatted  
 /* Switches for Player actions */
 //
 String spotify_action "Spotify Action: [%s]" 
+String spotify_action_long
 String spotify_proxy_action 
 DateTime spotify_lastConnectionDateTime 
 Switch spotify_proxy_update
-
+String spotify_playing
+String spotify_current_playlist
+String spotify_playlist_summary
+String spotify_search_term
+String spotify_search_results
 /* Use this to control echo volume at night */
 Number spotify_lock "Automated Actions are currently [%d]" 
+Number spotify_lock_default "Lock based on time [%d]" 
 
 /* use to unlock or reset renetrant lock */ 
 Switch resetLock 
