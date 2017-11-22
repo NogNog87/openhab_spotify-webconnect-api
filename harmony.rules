@@ -1,0 +1,89 @@
+var harmCount=0
+
+rule "Computer String switch"	
+    when
+    Item DisplayString received command
+    then
+      logInfo( "Rule Screen Switch", "recieved screen switch command{{}}",DisplayString )
+ 
+    if(DisplayString.state =="on")
+    {
+    	sendCommand(HueAnalystSetup,ON)
+    }
+    else
+    	sendCommand(HueAnalystSetup,OFF)
+    
+
+end
+
+
+rule "Computer switch"	
+    when
+    Item HueComputer received command
+    then
+    //probably want to make this more robust say when you turn pc on off with harmony
+	
+	    if(HueComputer.state == ON)
+	    {
+	    	while(HarmonyActivity.state != "PC" )
+	    	{
+	    	sendCommand(HarmonyActivity, "PC") 	
+	    	Thread::sleep(2000)
+			harmCount=harmCount+1
+			}
+		
+    }
+    if(HueComputer.state == OFF)
+    {
+    	while(HarmonyActivity.state != "PowerOff")
+    	{
+    	//sendCommand(HueLivingRoom0,0)
+    	sendCommand(HarmonyActivity, "PowerOff")
+    	Thread::sleep(2000)
+		}	    	
+    }
+end
+
+
+rule "Screen Switch"
+    when
+        Item HueAnalystSetup received command
+		or
+		Item HueAnalystDisplay received command
+    then
+   		logInfo( "Rule Screen Switch", "recieved screen switch command" )
+ 
+        if ( receivedCommand  == ON ){	 
+			sendCommand(HarmonySamsung, "InputHdmi2")
+        } 
+		else { sendCommand(HarmonySamsung, "InputHdmi1")	
+		}
+end
+
+rule "Play Netflix"
+when 
+Item HuePlayNetflix received command
+or
+Item HueResumeTV received command
+then
+
+logInfo( "TV", "Play" )
+	sendCommand("harmonyhub_device_Master_36738743_buttonPress", "Play")	
+end
+
+
+rule "Pause Netflix"
+when 
+Item HuePauseNetflix received command
+or
+Item HueHaltTV received command
+then
+
+logInfo( "TV", "Pause" )
+	sendCommand("harmonyhub_device_Master_36738743_buttonPress", "Pause")	
+
+end
+
+
+
+

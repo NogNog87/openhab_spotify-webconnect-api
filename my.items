@@ -1,0 +1,166 @@
+Switch sys_init
+
+Group gLights
+Group gLightBrightness "Brightness" <light> (gLights) 
+Group gSensors "motion [%s]" <motion>
+Group HueMotionEvent "Motion detected" <motion>
+Group gTemperature "Flat temp [%.2f °C]"  <temperature>
+Group gScene
+Group gColor (gLights)
+Group gpColor
+Group gpDimmer
+Group gpNumber
+Group gSwitch
+Group gString
+Group gharmony
+//Group GF_Living
+Group gSwitchLights
+Group gRooms
+Group gLivingRoom "Livingroom" <bespokeCat> (gRooms)
+Group gBedroom (gRooms)
+Group gBathroom (gRooms)
+Group gHallway (gRooms)
+Group gLivingBrightness (gLights)
+//Use the following group for read and write color access
+Group gLightColor (gLights)
+
+
+Switch LG_Proxy 
+Switch LG_TV0_Power "TV Power" <television> { channel="connectsdk:WebOSTV:192_168_1_101:power" }
+Switch LG_TV0_Mute  "TV Mute" { channel="connectsdk:WebOSTV:192_168_1_101:mute"}
+Number LG_TV0_Volume "Volume [%S]" { channel="connectsdk:WebOSTV:192_168_1_101:volume" }
+Switch LG_TV0_VolumeDown "Volume -" { autoupdate="false", channel="connectsdk:WebOSTV:192_168_1_101:volumeDown" }
+Switch LG_TV0_VolumeUp "Volume +" { autoupdate="false", channel="connectsdk:WebOSTV:192_168_1_101:volumeUp" }
+Number LG_TV0_ChannelNo "Channel #" { channel="connectsdk:WebOSTV:192_168_1_101:channel" }
+Switch LG_TV0_ChannelDown "Channel -"  { autoupdate="false", channel="connectsdk:WebOSTV:192_168_1_101:channelDown"  }
+Switch LG_TV0_ChannelUp "Channel +"  { autoupdate="false", channel="connectsdk:WebOSTV:192_168_1_101:channelUp"  }
+String LG_TV0_Channel "Channel [%S]"  { channel="connectsdk:WebOSTV:192_168_1_101:channelName"}
+
+String LG_TV0_MediaState "MediaState [%s]" {channel="connectsdk:WebOSTV:192_168_1_101:mediaState"}
+String LG_TV0_Toast { channel="connectsdk:WebOSTV:192_168_1_101:toast"}
+Switch LG_TV0_Play ">"  { autoupdate="false", channel="connectsdk:WebOSTV:192_168_1_101:mediaPlay" }
+Switch LG_TV0_Stop "Stop" { autoupdate="false", channel="connectsdk:WebOSTV:192_168_1_101:mediaStop" }
+Switch LG_TV0_Pause "||" { autoupdate="false", channel="connectsdk:WebOSTV:192_168_1_101:mediaPause" }
+Switch LG_TV0_Forward ">>" { autoupdate="false", channel="connectsdk:WebOSTV:192_168_1_101:mediaForward" }
+Switch LG_TV0_Rewind "<<" { autoupdate="false", channel="connectsdk:WebOSTV:192_168_1_101:mediaRewind" }
+String LG_TV0_Application "Application [%s]"  {channel="connectsdk:WebOSTV:192_168_1_101:appLauncher"} 
+Player LG_TV0_Player 
+//Switch LG_Proxy_Mute  "TV Mute" { channel="connectsdk:WebOSTV:192_168_2_218:mute"}
+// this assumes you also have the wake on lan binding configured & You need to update your broadcast and mac address
+//Switch LG_TV0_WOL   { wol="192.168.2.255#3c:cd:93:c2:20:e0" }
+
+String Samsung_Source_Name  { channel="samsungtv:tv:925980f5_0f3c_d200_4551_8b0d0222cb51:sourceName"}
+String Samsung_Source  { channel="samsungtv:tv:925980f5_0f3c_d200_4551_8b0d0222cb51:source"}
+Number Samsung_Source_Id  { channel="samsungtv:tv:925980f5_0f3c_d200_4551_8b0d0222cb51:sourceId"}
+String Samsung_Program_Title { channel="samsungtv:tv:925980f5_0f3c_d200_4551_8b0d0222cb51:programTitle"}
+String Samsung_Key_Code { channel="samsungtv:tv:925980f5_0f3c_d200_4551_8b0d0222cb51:keyCode"}
+
+String Samsung_Input_Channel "Channel [%S]" { channel="samsungtv:tv:925980f5_0f3c_d200_4551_8b0d0222cb51:channel"}
+Dimmer  Samsung_Brightness  { channel="samsungtv:tv:925980f5_0f3c_d200_4551_8b0d0222cb51:brightness" }
+
+Dimmer  Samsung_Volume "Volume [%S]"  { channel="samsungtv:tv:925980f5_0f3c_d200_4551_8b0d0222cb51:volume" }
+Switch  Samsung_Mute "Mute"    { channel="samsungtv:tv:925980f5_0f3c_d200_4551_8b0d0222cb51:mute" }
+
+
+Number	HueCountdown	"Countdown" (gpNumber) [ "TargetTemperature" ]
+Number	HueCountdownAdd	"Countdown Add" (gpNumber) 
+Number	LightTimer	"Light Timer" (gpNumber) 
+Number	LightTimerQ	"Light Timer quick" (gpNumber) 
+Number	MiscTimer	"Misc Timer" (gpNumber) 
+
+
+Color HueBedroom "Sleep Lights" (gLightColor, gBedroom) [ "Lighting" ]
+Color HueStriplight "Striplights" (gLightColor, gLivingRoom) [ "Lighting" ]
+
+String HarmonyActivity "Activity"(gharmony) { channel="harmonyhub:hub:Master:currentActivity" }
+String HarmonyLG "LG remote" (gharmony)  { channel="harmonyhub:device:Master:36738743:buttonPress" }
+String HarmonyYamaha "AVR Yamaha remote" (gharmony)  { channel="harmonyhub:device:Master:36738745:buttonPress" }
+String HarmonySamsung "Samsung remote" (gharmony)  { channel="harmonyhub:device:Master:36738744:buttonPress" }
+String HarmonyPC "PC remote" (gharmony)  { channel="harmonyhub:device:Master:36758369:buttonPress" }
+String HarmonyIR "PC IR" (gharmony)   { channel="harmonyhub:device:Master:36911587:buttonPress" }
+
+
+Number CPU_Load {channel="systeminfo:computer:openHABianPi:cpu#load"}
+
+Switch  HueComputer     "Computer" (gSwitch) [ "Switchable" ]
+Switch	HuePC		"PC"	 (gSwitch) [ "Switchable" ]
+Switch 	HuePlayNetflix	"Play TV"  (gSwitch) [ "Switchable" ]
+Switch 	HuePauseNetflix "Pause TV"  (gSwitch) [ "Switchable" ]
+Switch 	HueHaltTv 	"Halt TV"  (gSwitch) [ "Switchable" ]
+Switch 	HueResumeTv	"Resume TV"  (gSwitch) [ "Switchable" ]
+Switch  HuePlaySpotify  "Napster"  (gSwitch) [ "Switchable" ]
+Switch  HuePlaySpotify1  "Spotify"  (gSwitch) [ "Switchable" ]
+Dimmer  HueSpotifyVolume  "Speaker Volume" [ "Lighting" ]
+Switch  HueSpotifyNext  "Next"  (gSwitch) [ "Switchable" ]
+Switch  HueSpotifyPrevious  "Previous"  (gSwitch) [ "Switchable" ]
+Switch  HueSpotifyPC  "Napster PC"  (gSwitch) [ "Switchable" ]
+Switch  HueSpotifyPC1  "Spotify PC"  (gSwitch) [ "Switchable" ]
+Switch  OpenhabPlay		"Openhab Play"  (gSwitch) 
+String  PlayString		"Play String"  (gString) 
+
+
+Dimmer  HueBathroom0     "Delta Bulbs"  (gLightBrightness, gBathroom) [ "Lighting" ]
+Dimmer  HueBathroom     "Bathroom Lights" (gLightBrightness, gBathroom) [ "Lighting" ]
+Dimmer  HueBathroom1     "Toilette Lights" (gLightBrightness, gBathroom) [ "Lighting" ]
+Color	HueBathroomColor	"Bathroom Color" (gColor, gBathroom)
+Color	ProxyBathroomColor "Bathroom Color"  (gLightColor, gBathroom)
+
+Dimmer  HueHallway0     "Beta Bulbs"  (gLightBrightness, gHallway) [ "Lighting" ]
+Dimmer  HueHallway     "Hallway Lights"  (gLightBrightness, gHallway) [ "Lighting" ]
+Dimmer  HueHallway1   "Hall Lights"  (gLightBrightness, gHallway) [ "Lighting" ]
+Color	HueHallwayColor	"Hallway Color" (gColor, gHallway)
+Color	ProxyHallwayColor "Hallway color"  (gLightColor, gHallway)
+
+Dimmer  HueLivingRoom0	"Alpha Bulbs"   (gLightBrightness, gLivingRoom) [ "Lighting" ]
+Dimmer  HueLivingRoom	"Livingroom Lights"  (gLightBrightness, gLivingRoom)  [ "Lighting" ]
+Dimmer  HueLivingRoom1  "Kitchen Lights"  (gLightBrightness, gLivingRoom)  [ "Lighting" ]
+Dimmer  HueLivingRoom2  "Office Lights"   (gLightBrightness, gLivingRoom)  [ "Lighting" ]
+Dimmer	HueLivingRoom3	"Lounge" (gLightBrightness, gLivingRoom) [ "Lighting" ]
+Switch  DashLivingRoom  { channel="amazondashbutton:dashbutton:ac-63-be-27-ab-db:press" }
+Color	HueLivingRoomColor	"Livingroom Color" (gColor, gLivingRoom)
+Color	ProxyLivingRoomColor "Livingroom Color" (gLightColor, gLivingRoom)
+
+Dimmer  HueAllLights0     "Omega Bulbs"  (gLightBrightness, gRooms) [ "Lighting" ]
+Dimmer  HueAllLights     "Flat Lights"  (gLightBrightness, gRooms) [ "Lighting" ]
+Dimmer  HueAllLights1     "All Lights"  (gLightBrightness, gRooms) [ "Lighting" ]
+//Dimmer	HueOtherLights	"Save The World"  (gLightBrightness, gRooms) [ "Switchable" ]
+Color	HueAllColor	"All Color" <light> (gColor, gRooms)
+Color	ProxyAllColor "All Color" <proxy> (gLightColor, gRooms)
+
+Switch HueAnalystSetup	"Analyst Screen" (gSwitch)  [ "Switchable" ]
+Switch HueAnalystDisplay "Analyst Display" (gSwitch) [ "Switchable" ]
+Switch HueWorkScreen	"Work Screen" (gSwitch)  [ "Switchable" ]
+String DisplayString (gString)
+
+
+Switch HueImHome	"Bitch I'm Home"  (gSwitch)  [ "Switchable" ]
+Switch HueImHome1	"Babe I'm Back"  (gSwitch)  [ "Switchable" ]
+
+Switch HueEvidence	"Destroy Everything" (gSwitch)   [ "Switchable" ]
+Switch HueDoNoEvil	"Kill everyone"	 (gSwitch)  [ "Switchable" ]
+
+String SceneGeneral	"Scene is [%s]"	<sofa> 
+Color SceneColor "Scene color" (gColor)
+Color SceneOffColor "Scene off color" <color> (gpColor)
+Switch SceneGeneralWake		"Morning" (gScene) [ "Switchable" ] 
+Switch SceneGeneralReading	"Reading" (gScene)  [ "Switchable" ]
+Switch SceneGeneralCleaning	"Cleaning" (gScene)  [ "Switchable" ]
+Switch SceneGeneralFull		"Make My Eyes Bleed" (gScene)  [ "Switchable" ]
+Switch SceneGeneralMax		"Max"  (gScene) [ "Switchable" ]
+Switch SceneGeneralEvening	"Evening" (gScene)  [ "Switchable" ]
+Switch SceneGeneralNight	"Night" (gScene)  [ "Switchable" ]
+Switch SceneGeneralSleep	"Sleep"  (gScene) [ "Switchable" ]
+Switch SceneGeneralSleep1	"Goodnight" (gScene)  [ "Switchable" ]
+Switch SceneGeneralInsomnia	"Insomnia"  (gScene) [ "Switchable" ]
+Switch SceneGeneralParty	"PartyTime"  (gScene) [ "Switchable" ]
+
+
+
+Switch DebugSwitch "Debug Switch" (gSwitch) [ "Switchable" ]
+
+String logUrl
+
+String VoiceCommand "VoiceCommand"
+String myVoice "voicemy" (gString)
+
+String habpanel_state
