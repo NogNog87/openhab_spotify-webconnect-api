@@ -26,24 +26,24 @@ Group gLightColor (gLights)
 
 
 Switch LG_Proxy 
-Switch LG_TV0_Power "TV Power" <television> { channel="connectsdk:WebOSTV:192_168_1_101:power" }
-Switch LG_TV0_Mute  "TV Mute" { channel="connectsdk:WebOSTV:192_168_1_101:mute"}
-Number LG_TV0_Volume "Volume [%S]" { channel="connectsdk:WebOSTV:192_168_1_101:volume" }
-Switch LG_TV0_VolumeDown "Volume -" { autoupdate="false", channel="connectsdk:WebOSTV:192_168_1_101:volumeDown" }
-Switch LG_TV0_VolumeUp "Volume +" { autoupdate="false", channel="connectsdk:WebOSTV:192_168_1_101:volumeUp" }
-Number LG_TV0_ChannelNo "Channel #" { channel="connectsdk:WebOSTV:192_168_1_101:channel" }
-Switch LG_TV0_ChannelDown "Channel -"  { autoupdate="false", channel="connectsdk:WebOSTV:192_168_1_101:channelDown"  }
-Switch LG_TV0_ChannelUp "Channel +"  { autoupdate="false", channel="connectsdk:WebOSTV:192_168_1_101:channelUp"  }
-String LG_TV0_Channel "Channel [%S]"  { channel="connectsdk:WebOSTV:192_168_1_101:channelName"}
+Switch LG_TV0_Power "TV Power" <television> { channel="lgwebos:WebOSTV:192_168_1_100:power" }
+Switch LG_TV0_Mute  "TV Mute" { channel="lgwebos:WebOSTV:192_168_1_100:mute"}
+Number LG_TV0_Volume "Volume [%S]" { channel="lgwebos:WebOSTV:192_168_1_100:volume" }
+Switch LG_TV0_VolumeDown "Volume -" { autoupdate="false", channel="lgwebos:WebOSTV:192_168_1_100:volumeDown" }
+Switch LG_TV0_VolumeUp "Volume +" { autoupdate="false", channel="lgwebos:WebOSTV:192_168_1_100:volumeUp" }
+Number LG_TV0_ChannelNo "Channel #" { channel="lgwebos:WebOSTV:192_168_1_100:channel" }
+Switch LG_TV0_ChannelDown "Channel -"  { autoupdate="false", channel="lgwebos:WebOSTV:192_168_1_100:channelDown"  }
+Switch LG_TV0_ChannelUp "Channel +"  { autoupdate="false", channel="lgwebos:WebOSTV:192_168_1_100:channelUp"  }
+String LG_TV0_Channel "Channel [%S]"  { channel="lgwebos:WebOSTV:192_168_1_100:channelName"}
 
-String LG_TV0_MediaState "MediaState [%s]" {channel="connectsdk:WebOSTV:192_168_1_101:mediaState"}
-String LG_TV0_Toast { channel="connectsdk:WebOSTV:192_168_1_101:toast"}
-Switch LG_TV0_Play ">"  { autoupdate="false", channel="connectsdk:WebOSTV:192_168_1_101:mediaPlay" }
-Switch LG_TV0_Stop "Stop" { autoupdate="false", channel="connectsdk:WebOSTV:192_168_1_101:mediaStop" }
-Switch LG_TV0_Pause "||" { autoupdate="false", channel="connectsdk:WebOSTV:192_168_1_101:mediaPause" }
-Switch LG_TV0_Forward ">>" { autoupdate="false", channel="connectsdk:WebOSTV:192_168_1_101:mediaForward" }
-Switch LG_TV0_Rewind "<<" { autoupdate="false", channel="connectsdk:WebOSTV:192_168_1_101:mediaRewind" }
-String LG_TV0_Application "Application [%s]"  {channel="connectsdk:WebOSTV:192_168_1_101:appLauncher"} 
+String LG_TV0_MediaState "MediaState [%s]" {channel="lgwebos:WebOSTV:192_168_1_100:mediaState"}
+String LG_TV0_Toast { channel="lgwebos:WebOSTV:192_168_1_100:toast"}
+Switch LG_TV0_Play ">"  { autoupdate="false", channel="lgwebos:WebOSTV:192_168_1_100:mediaPlay" }
+Switch LG_TV0_Stop "Stop" { autoupdate="false", channel="lgwebos:WebOSTV:192_168_1_100:mediaStop" }
+Switch LG_TV0_Pause "||" { autoupdate="false", channel="lgwebos:WebOSTV:192_168_1_100:mediaPause" }
+Switch LG_TV0_Forward ">>" { autoupdate="false", channel="lgwebos:WebOSTV:192_168_1_100:mediaForward" }
+Switch LG_TV0_Rewind "<<" { autoupdate="false", channel="lgwebos:WebOSTV:192_168_1_100:mediaRewind" }
+String LG_TV0_Application "Application [%s]"  {channel="lgwebos:WebOSTV:192_168_1_100:appLauncher"} 
 Player LG_TV0_Player 
 //Switch LG_Proxy_Mute  "TV Mute" { channel="connectsdk:WebOSTV:192_168_2_218:mute"}
 // this assumes you also have the wake on lan binding configured & You need to update your broadcast and mac address
@@ -69,8 +69,8 @@ Number	LightTimerQ	"Light Timer quick" (gpNumber)
 Number	MiscTimer	"Misc Timer" (gpNumber) 
 
 
-Color HueBedroom "Sleep Lights" (gLightColor, gBedroom) [ "Lighting" ]
-Color HueStriplight "Striplights" (gLightColor, gLivingRoom) [ "Lighting" ]
+Color HueBedroom "Sleep Light" (gLightColor, gBedroom) [ "Lighting" ]
+Color HueStriplight "Striplight" (gLightColor, gLivingRoom) [ "Lighting" ]
 
 String HarmonyActivity "Activity"(gharmony) { channel="harmonyhub:hub:Master:currentActivity" }
 String HarmonyLG "LG remote" (gharmony)  { channel="harmonyhub:device:Master:36738743:buttonPress" }
@@ -115,7 +115,7 @@ Dimmer  HueLivingRoom0	"Alpha Bulbs"   (gLightBrightness, gLivingRoom) [ "Lighti
 Dimmer  HueLivingRoom	"Livingroom Lights"  (gLightBrightness, gLivingRoom)  [ "Lighting" ]
 Dimmer  HueLivingRoom1  "Kitchen Lights"  (gLightBrightness, gLivingRoom)  [ "Lighting" ]
 Dimmer  HueLivingRoom2  "Office Lights"   (gLightBrightness, gLivingRoom)  [ "Lighting" ]
-Dimmer	HueLivingRoom3	"Lounge" (gLightBrightness, gLivingRoom) [ "Lighting" ]
+//Dimmer	HueLivingRoom3	"Lounge" (gLightBrightness, gLivingRoom) [ "Lighting" ]
 Switch  DashLivingRoom  { channel="amazondashbutton:dashbutton:ac-63-be-27-ab-db:press" }
 Color	HueLivingRoomColor	"Livingroom Color" (gColor, gLivingRoom)
 Color	ProxyLivingRoomColor "Livingroom Color" (gLightColor, gLivingRoom)
@@ -157,10 +157,12 @@ Switch SceneGeneralParty	"PartyTime"  (gScene) [ "Switchable" ]
 
 
 Switch DebugSwitch "Debug Switch" (gSwitch) [ "Switchable" ]
-
+String DebugString "Debug String" 
 String logUrl
 
 String VoiceCommand "VoiceCommand"
 String myVoice "voicemy" (gString)
-
+//Determine location to set temp, etc. 
+String myLocation "My location: [%s]" 
+DateTime flatDetectionTime "Time of last movement detected [%s]" 
 String habpanel_state

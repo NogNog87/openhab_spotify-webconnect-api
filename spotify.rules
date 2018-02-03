@@ -1,11 +1,43 @@
 import java.util.concurrent.locks.ReentrantLock
 import org.joda.time.DateTime
+import org.eclipse.xtext.xbase.lib.Functions
+import java.util.Calendar
+
 
 var Timer spotifyLockTimer = null
 var ReentrantLock lock  = new ReentrantLock()
 var String volumeCommand
 var timeOut = 5000
 
+//Try and have everything internal in mills stored  as a string if long term
+val Functions$Function1<String, DateTime> SecondsIntervaltoMills = [ c |
+    var millsTotal = Integer::parseInt(c.toString) * 1000 
+    //logInfo("conv", "millis in [{}] to seconds {}", c.toString , millsTotal.toString)
+    return (new DateTime (millsTotal)).millis;
+]
+val Functions$Function1<DateTime, String> DateTimeIntervaltoSeconds = [ c |
+    var SecondsTotal = c.millis / 1000 
+    //logInfo("conv", "millis in [{}] to seconds {}", c.toString , SecondsTotal.toString)
+    return SecondsTotal.toString;
+]
+/*
+val Functions$Function1<DateTime, String> SecondsIntervaltoMills = [ c |
+    var SecondsTotal = c.millis / 1000 
+    //logInfo("conv", "millis in [{}] to seconds {}", c.toString , SecondsTotal.toString)
+    return SecondsTotal.toString;
+]
+
+val Functions$Function2<GenericItem, GenericItem> millisToSeconds= [ s c |
+    //logInfo("lambda", s.state.toString)
+    logInfo("Tuya", "Execute action [{}] ", c)
+
+    var DateTime tmpTime = new DateTime((c as DateTimeType).calendar.timeInMillis)
+    logInfo("Tuya", "In time [{}] converted {} in millis ", c, tmpTime, tmpTime.millis)
+   
+    return tmpTime.millis.toString
+
+]
+*/
 rule "Spotify run script"
     when
 		Item spotify_forceupadte received update
@@ -67,13 +99,13 @@ end
 
 rule "Spotify seek"
     when
-		Item spotify_current_progress_estimated received command
+		Item spotify_current_progress received command
     then
-        var seekpos = Integer::parseInt(spotify_current_progress_estimated.state.toString) * 1000 
-        logInfo("Spotify", "Position to seek {}", seekpos)
+        var seekpos = Integer::parseInt(spotify_current_progress.state.toString) 
+        logInfo("Spotify", "Position to seek {} and receivedcommand {}", seekpos, receivedCommand)
       
-		sendCommand(spotify_action, "seek " + seekpos.toString )
-        postUpdate(spotify_current_progress, seekpos.toString)
+		sendCommand(spotify_action, "seek " + receivedCommand )
+        postUpdate(spotify_current_progress, receivedCommand)
         postUpdate(spotify_current_update_time, now.toString)
 end
 
@@ -122,17 +154,23 @@ rule "spotify update progress"
                 logInfo("spotify", "new song cprog{} and duration {}", cprog, spotify_current_update_time.state)
                 cprog=1
                 spotify_current_progress.sendCommand("1")
-                logInfo("spotify", "new song cprog{} and duration {}", cprog, spotify_current_update_time.state)
+                logInfo("spotify", "1. new song cprog{} and duration {}", cprog, spotify_current_update_time.state)
                 postUpdate(spotify_current_update_time, now.toString)
-                logInfo("spotify", "new song cprog{} and duration {}", cprog, spotify_current_update_time.state)
+                logInfo("spotify", "2. new song cprog{} and duration {}", cprog, spotify_current_update_time.state)
                 sendCommand(spotify_forceupadte,ON)
-                logInfo("spotify", "new song cprog{} and duration {}", cprog, spotify_current_update_time.state)
+                logInfo("spotify", "3. new song cprog{} and duration {}", cprog, spotify_current_update_time.state)
                     
             }
             else{
-            postUpdate(spotify_current_progress_estimated, cprog / 1000)   
+            //postUpdate(spotify_current_progress_estimated, cprog )   
             }
-        }                       
+            var obtest =  new DateTime( cprog) 
+            var res = DateTimeIntervaltoSeconds.apply(obtest)  
+            var convback = SecondsIntervaltoMills
+        .apply(res)
+            //logInfo("update spotify", "return sec is {} and back {}", res, convback)
+        }  
+                            
 
 end
 
