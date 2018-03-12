@@ -133,7 +133,7 @@ Switch HueWorkScreen	"Work Screen" (gSwitch)  [ "Switchable" ]
 String DisplayString (gString)
 
 
-Switch HueImHome	"Bitch I'm Home"  (gSwitch)  [ "Switchable" ]
+Switch HueImHome	"Me on"  (gSwitch)  [ "Switchable" ]
 Switch HueImHome1	"Babe I'm Back"  (gSwitch)  [ "Switchable" ]
 
 Switch HueEvidence	"Destroy Everything" (gSwitch)   [ "Switchable" ]
